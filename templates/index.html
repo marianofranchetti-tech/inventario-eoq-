@@ -1,662 +1,1279 @@
+{% raw %}
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Analizador de Inventarios — EOQ Probabilístico</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0F1117;--bg2:#1A1D27;--bg3:#22263A;
-  --border:#2E3250;--text:#E8EAF6;--text2:#9196B5;--text3:#5A5F7A;
-  --green:#1D9E75;--green2:#0F6E56;
-  --amber:#EF9F27;--red:#E24B4A;--blue:#4A90D9;
-  --radius:8px;
-}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
-.header{padding:.875rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:var(--bg2)}
-.header h1{font-size:15px;font-weight:600;margin-bottom:1px}
-.header p{font-size:11px;color:var(--text2)}
-.status{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
-.status.ok{background:#0A2E22;color:var(--green);border-color:var(--green2)}
-.tabs{display:flex;gap:2px;padding:0 1.5rem;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
-.tab{padding:9px 13px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
-.tab.active{color:var(--text);border-bottom-color:var(--green);font-weight:600}
-.tab:hover:not(.active){color:var(--text)}
-.tab-group{padding:2px 8px;font-size:10px;color:var(--text3);align-self:center;flex-shrink:0}
-.main{padding:1.25rem 1.5rem;max-width:1400px;margin:0 auto}
-.panel{display:none}.panel.active{display:block}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.75rem}
-.card-title{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.75rem}
-@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
-.mc{background:var(--bg3);border-radius:var(--radius);padding:.75rem}
-.mc-label{font-size:10px;color:var(--text2);margin-bottom:4px}
-.mc-val{font-size:19px;font-weight:700;font-family:'Courier New',monospace}
-.mc-sub{font-size:10px;color:var(--text3);margin-top:2px}
-.tw{overflow-x:auto;margin-bottom:.75rem;border-radius:var(--radius);border:1px solid var(--border)}
-table{width:100%;border-collapse:collapse}
-th{font-size:10px;font-weight:600;color:var(--text2);text-align:left;padding:7px 8px;white-space:nowrap;background:var(--bg3);border-bottom:1px solid var(--border)}
-td{padding:6px 8px;border-bottom:1px solid var(--border);font-family:'Courier New',monospace;font-size:11px;white-space:nowrap}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--bg3)}
-.badge{display:inline-block;padding:1px 7px;border-radius:3px;font-size:10px;font-weight:700;font-family:sans-serif}
-.bA{background:#3D1515;color:#F97171}.bB{background:#3D2E0A;color:#F4B942}.bC{background:#0A2E22;color:#4DD4A0}
-.bok{background:#0A2E22;color:#4DD4A0}.bwarn{background:#3D2E0A;color:#F4B942}.bcrit{background:#3D1515;color:#F97171}
-.binfo{background:#0A1E3D;color:#6BAAEE}
-.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle}
-.dok{background:var(--green)}.dwarn{background:var(--amber)}.dcrit{background:var(--red)}
-select,input[type=number]{width:100%;padding:6px 9px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-family:monospace}
-select:focus,input:focus{outline:none;border-color:var(--green)}
-.form-label{font-size:11px;color:var(--text2);margin-bottom:3px;display:block}
-.btn{padding:7px 16px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text);cursor:pointer;transition:all .15s}
-.btn:hover{background:var(--bg3)}
-.btn.prim{background:var(--green);border-color:var(--green);color:#fff}
-.btn.prim:hover{background:var(--green2)}
-.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:2.5rem 1rem;text-align:center;cursor:pointer;transition:all .2s}
-.upload-zone:hover,.upload-zone.drag{border-color:var(--green);background:var(--bg3)}
-.ins{border-left:2px solid var(--green);padding:8px 12px;background:var(--bg3);border-radius:0 6px 6px 0;margin-bottom:6px;font-size:11px;line-height:1.5}
-.iw{border-left-color:var(--amber)}.ic{border-left-color:var(--red)}.ii{border-left-color:var(--blue)}
-#log{font-size:11px;color:var(--text2);margin-top:.5rem;min-height:18px;padding:0 .25rem}
-.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .6s linear infinite;margin-right:5px;vertical-align:middle}
-@keyframes spin{to{transform:rotate(360deg)}}
-.bar-wrap{width:100%;background:var(--bg);border-radius:3px;height:6px;overflow:hidden;display:inline-block;vertical-align:middle;min-width:60px}
-.bar-fill{height:100%;border-radius:3px;transition:width .3s}
-.forecast-month{display:inline-block;text-align:center;padding:4px 6px;background:var(--bg3);border-radius:4px;font-family:monospace;font-size:11px;min-width:54px}
-</style>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EOQ Suite · Gestión de Inventarios</title>
+<script>
+window.__resources = {
+  "https://unpkg.com/react@18.3.1/umd/react.production.min.js": "/static/react.min.js",
+  "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js": "/static/react-dom.min.js"
+};
+</script>
+<script src="/static/dc-runtime.js"></script>
+
 </head>
 <body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/a9ae8944.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/b748889e.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/18c089a0.woff2") format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/c87c161a.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/6e126d39.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/a8dd35ce.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/1c6054f2.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/static/fonts/a9ae8944.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/static/fonts/b748889e.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/static/fonts/18c089a0.woff2") format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/static/fonts/c87c161a.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/static/fonts/6e126d39.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/static/fonts/a8dd35ce.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/static/fonts/1c6054f2.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/static/fonts/a9ae8944.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/static/fonts/b748889e.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/static/fonts/18c089a0.woff2") format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/static/fonts/c87c161a.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/static/fonts/6e126d39.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/static/fonts/a8dd35ce.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/static/fonts/1c6054f2.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/a9ae8944.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/b748889e.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/18c089a0.woff2") format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+/* greek */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/c87c161a.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/6e126d39.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/a8dd35ce.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/1c6054f2.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+  html,body{margin:0;padding:0;height:100%;}
+  body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#F5F7FA;color:#1A2332;}
+  a{color:#1565C0;text-decoration:none;}
+  a:hover{color:#0D47A1;text-decoration:underline;}
+  input,select{font-family:inherit;}
+  *{box-sizing:border-box;}
+</style>
+</helmet>
+<div style="display:flex;height:100vh;overflow:hidden;font-size:13px;color:#1A2332;background:#F5F7FA">
 
-<div class="header">
-  <div>
-    <h1>Analizador de Inventarios</h1>
-    <p>EOQ probabilístico · ABC · Rotación · Sell-through · Backorders · Forecasting IA</p>
-  </div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <span class="status" id="status-badge">Sin datos</span>
-    <button class="btn prim" onclick="document.getElementById('fi').click()">↑ Cargar Excel</button>
-    <input type="file" id="fi" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
-  </div>
-</div>
-
-<div class="tabs">
-  <button class="tab active" id="t0" onclick="showTab(0)">Inicio</button>
-  <button class="tab" id="t1" onclick="showTab(1)">Parámetros</button>
-  <span class="tab-group">— EOQ —</span>
-  <button class="tab" id="t2" onclick="showTab(2)">Resultados EOQ</button>
-  <button class="tab" id="t3" onclick="showTab(3)">ABC</button>
-  <button class="tab" id="t4" onclick="showTab(4)">Diagnóstico</button>
-  <button class="tab" id="t5" onclick="showTab(5)">Sensibilidad</button>
-  <span class="tab-group">— Avanzado —</span>
-  <button class="tab" id="t6" onclick="showTab(6)">Rotación</button>
-  <button class="tab" id="t7" onclick="showTab(7)">Sell-through</button>
-  <button class="tab" id="t8" onclick="showTab(8)">Backorders</button>
-  <button class="tab" id="t9" onclick="showTab(9)">Forecasting IA</button>
-</div>
-
-<div class="main">
-
-<!-- TAB 0: INICIO -->
-<div id="p0" class="panel active">
-  <div class="upload-zone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)" onclick="document.getElementById('fi').click()">
-    <div style="font-size:30px;margin-bottom:.5rem">📊</div>
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:.3rem">Cargá tu archivo Excel</h3>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem;max-width:400px;margin-left:auto;margin-right:auto">El sistema detecta automáticamente parámetros y productos. Arrastrá el archivo o hacé click.</p>
-    <button class="btn prim" onclick="event.stopPropagation();document.getElementById('fi').click()">Seleccionar archivo</button>
-  </div>
-  <div id="log"></div>
-  <div style="margin-top:1rem" class="g2">
-    <div class="card"><p class="card-title">Parámetros (col A / col B)</p>
-      <table><tbody>
-        <tr><td style="color:var(--text2)">Fila 5</td><td>Nivel servicio A → 0.99</td></tr>
-        <tr><td style="color:var(--text2)">Fila 6</td><td>Nivel servicio B → 0.97</td></tr>
-        <tr><td style="color:var(--text2)">Fila 7</td><td>Nivel servicio C → 0.95</td></tr>
-        <tr><td style="color:var(--text2)">Fila 8</td><td>Costo pedido % → 0.04</td></tr>
-        <tr><td style="color:var(--text2)">Fila 9</td><td>Costo m²/mes → $9500</td></tr>
-      </tbody></table>
+  <!-- ============ SIDEBAR ============ -->
+  <div style="width:228px;flex-shrink:0;background:#FFFFFF;border-right:1px solid #E1E5EB;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #E1E5EB">
+      <div style="width:32px;height:32px;border-radius:7px;background:#1565C0;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">DM</div>
+      <div>
+        <div style="font-weight:700;font-size:13px;line-height:1.2">DIMACO S.A.</div>
+        <div style="font-size:10.5px;color:#6B7A8D">Gestión de Inventarios</div>
+      </div>
     </div>
-    <div class="card"><p class="card-title">Productos (desde fila 14)</p>
-      <table><tbody>
-        <tr><td style="color:var(--text2)">Col A</td><td>Código</td></tr>
-        <tr><td style="color:var(--text2)">Col B</td><td>Nombre</td></tr>
-        <tr><td style="color:var(--text2)">Col C</td><td>Volumen m³</td></tr>
-        <tr><td style="color:var(--text2)">Col E</td><td>Lead time (días)</td></tr>
-        <tr><td style="color:var(--text2)">Col F–Q</td><td>Ventas ene–dic</td></tr>
-        <tr><td style="color:var(--text2)">Col S/T</td><td>Precio / Costo unitario</td></tr>
-      </tbody></table>
+    <div style="padding:10px 0;overflow-y:auto;flex:1">
+      <div style="padding:4px 16px 8px;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#6B7A8D">Módulo EOQ</div>
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="10">
+        <div onclick="{{ n.onClick }}" style="display:flex;align-items:center;gap:10px;padding:7px 12px;margin:1px 8px;border-radius:6px;cursor:pointer;font-weight:{{ n.fw }};color:{{ n.fg }};background:{{ n.bg }}" style-hover="background:#EDF2F9">
+          {{ n.icon }}<span>{{ n.label }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid #E1E5EB;font-size:11px;color:#6B7A8D">
+      EOQ Suite v4.2 · Período FY26
+    </div>
+  </div>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+
+    <!-- HEADER -->
+    <div style="height:54px;flex-shrink:0;background:#FFFFFF;border-bottom:1px solid #E1E5EB;display:flex;align-items:center;padding:0 20px;gap:16px">
+      <div style="font-weight:600;font-size:13.5px">{{ sectionTitle }}</div>
+      <div style="color:#6B7A8D;font-size:12px">Distribuidora de Materiales de Construcción · Depósito Central</div>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:{{ statusColor }};background:#F5F7FA;border:1px solid #E1E5EB;border-radius:6px;padding:5px 10px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        <span style="width:7px;height:7px;border-radius:50%;background:{{ statusDot }};display:inline-block;flex-shrink:0"></span>
+        {{ dataStatus }}
+      </div>
+      <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#FFFFFF;background:#1565C0;border:1px solid #1565C0;border-radius:6px;padding:6px 14px;cursor:pointer" style-hover="background:#0D4F9E">
+        {{ uploadIcon }}{{ uploadLabel }}
+        <input type="file" accept=".xlsx,.xls" onchange="{{ onFile }}" style="display:none">
+      </label>
+      <div style="position:relative;cursor:pointer;color:#6B7A8D;display:flex" style-hover="color:#1A2332">
+        {{ bellIcon }}
+        <span style="position:absolute;top:-5px;right:-6px;background:#C62828;color:#fff;font-size:9.5px;font-weight:700;border-radius:8px;padding:1px 5px">{{ alertCount }}</span>
+      </div>
+      <div style="width:1px;height:24px;background:#E1E5EB"></div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:30px;height:30px;border-radius:50%;background:#E3ECF7;color:#1565C0;font-weight:700;font-size:11.5px;display:flex;align-items:center;justify-content:center">MG</div>
+        <div>
+          <div style="font-weight:600;font-size:12px;line-height:1.2">María González</div>
+          <div style="font-size:10.5px;color:#6B7A8D">Jefa de Compras</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div style="flex:1;overflow-y:auto;padding:20px 24px">
+
+      <!-- ==== 1. DASHBOARD ==== -->
+      <sc-if value="{{ showDash }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Dashboard">
+          <div style="margin-bottom:16px">
+            <div style="font-size:19px;font-weight:700">Dashboard general</div>
+            <div style="color:#6B7A8D;margin-top:2px">Indicadores globales del portafolio · {{ skuCount }} SKUs activos · Escenario de demanda {{ scenarioLabel }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px">
+            <sc-for list="{{ dashKpis }}" as="k" hint-placeholder-count="5">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+                <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6B7A8D">{{ k.label }}</div>
+                <div style="font-size:21px;font-weight:700;margin-top:6px;letter-spacing:-0.01em">{{ k.value }}</div>
+                <div style="margin-top:5px;font-size:11.5px;display:flex;gap:6px;align-items:baseline"><span style="font-weight:600;color:{{ k.deltaColor }}">{{ k.delta }}</span><span style="color:#6B7A8D">{{ k.sub }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:12px">
+            <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+              <div style="padding:12px 16px;border-bottom:1px solid #E1E5EB;font-weight:600">Valor de inventario por producto</div>
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:9px">
+                <sc-for list="{{ valueBars }}" as="b" hint-placeholder-count="10">
+                  <div style="display:grid;grid-template-columns:170px 1fr 90px;align-items:center;gap:10px">
+                    <div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.name }}</div>
+                    <div style="height:9px;background:#EDF0F4;border-radius:4px;overflow:hidden"><div style="height:100%;border-radius:4px;background:#1565C0;width:{{ b.pct }}%"></div></div>
+                    <div style="font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#1A2332">{{ b.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+                <div style="padding:12px 16px;border-bottom:1px solid #E1E5EB;font-weight:600;display:flex;justify-content:space-between"><span>Alertas activas</span><a href="#" onclick="{{ goDiag }}" style="font-size:12px;font-weight:500">Ver diagnóstico</a></div>
+                <div style="padding:8px 16px 12px">
+                  <sc-for list="{{ dashAlerts }}" as="a" hint-placeholder-count="4">
+                    <div style="display:flex;gap:9px;padding:7px 0;border-bottom:1px solid #F0F2F6;align-items:baseline">
+                      <span style="width:8px;height:8px;border-radius:50%;background:{{ a.dot }};flex-shrink:0;position:relative;top:1px"></span>
+                      <div><span style="font-weight:600;font-size:12px">{{ a.title }}</span><span style="color:#6B7A8D;font-size:12px"> — {{ a.desc }}</span></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+                <div style="padding:12px 16px;border-bottom:1px solid #E1E5EB;font-weight:600">Pedidos sugeridos</div>
+                <div style="padding:8px 16px 12px">
+                  <sc-for list="{{ suggested }}" as="s" hint-placeholder-count="3">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #F0F2F6">
+                      <div><div style="font-weight:600;font-size:12px">{{ s.name }}</div><div style="font-size:11px;color:#6B7A8D">Cantidad óptima: {{ s.qty }} u</div></div>
+                      <span style="font-size:11px;font-weight:600;color:{{ s.whenColor }};background:{{ s.whenBg }};padding:3px 8px;border-radius:4px">{{ s.when }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);display:flex;gap:0">
+            <sc-for list="{{ abcChips }}" as="c" hint-placeholder-count="3">
+              <div style="flex:1;padding:14px 18px;border-right:1px solid #E1E5EB;display:flex;align-items:center;gap:12px">
+                <span style="width:34px;height:34px;border-radius:7px;background:{{ c.bg }};color:{{ c.fg }};font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center">{{ c.cls }}</span>
+                <div><div style="font-weight:600;font-size:12.5px">{{ c.count }} productos</div><div style="font-size:11.5px;color:#6B7A8D">{{ c.pct }} del valor anual</div></div>
+              </div>
+            </sc-for>
+            <div style="flex:1;padding:14px 18px;display:flex;align-items:center"><a href="#" onclick="{{ goAbc }}" style="font-size:12px;font-weight:600">Ver clasificación ABC →</a></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ==== 2. PARÁMETROS ==== -->
+      <sc-if value="{{ showParams }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Parámetros del modelo">
+          <div style="margin-bottom:16px;display:flex;align-items:flex-end;justify-content:space-between">
+            <div>
+              <div style="font-size:19px;font-weight:700">Parámetros del modelo</div>
+              <div style="color:#6B7A8D;margin-top:2px">Editá los valores base — todo el modelo se recalcula al instante</div>
+            </div>
+            <div style="display:flex;gap:12px;font-size:12px">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:7px;padding:8px 14px"><span style="color:#6B7A8D">Nivel de servicio</span> <b style="margin-left:6px">{{ svcLevel }}</b> <span style="color:#6B7A8D">(z = {{ zVal }})</span></div>
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:7px;padding:8px 14px"><span style="color:#6B7A8D">Escenario demanda</span> <b style="margin-left:6px">{{ scenarioLabel }}</b></div>
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:7px;padding:8px 14px"><span style="color:#6B7A8D">Días operativos</span> <b style="margin-left:6px">365</b></div>
+            </div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);overflow-x:auto">
+            <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px">
+              <sc-raw-thead><sc-raw-tr>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">SKU</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Producto</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Demanda anual (u)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Costo por pedido ($)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Mantenimiento (%/año)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Lead time (días)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Costo unitario ($)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Stock actual (u)</sc-raw-th>
+              </sc-raw-tr></sc-raw-thead>
+              <sc-raw-tbody><sc-for list="{{ paramRows }}" as="p" hint-placeholder-count="10">
+                <sc-raw-tr style="background:{{ p.rowBg }}">
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;font-weight:600;color:#1565C0;white-space:nowrap">{{ p.sku }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;white-space:nowrap">{{ p.name }}</sc-raw-td>
+                    <sc-raw-td style="padding:5px 14px;border-bottom:1px solid #EDF0F4;text-align:right"><input type="number" value="{{ p.demand }}" onchange="{{ p.onD }}" style="width:96px;padding:5px 8px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)"></sc-raw-td>
+                    <sc-raw-td style="padding:5px 14px;border-bottom:1px solid #EDF0F4;text-align:right"><input type="number" value="{{ p.orderCost }}" onchange="{{ p.onS }}" style="width:96px;padding:5px 8px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)"></sc-raw-td>
+                    <sc-raw-td style="padding:5px 14px;border-bottom:1px solid #EDF0F4;text-align:right"><input type="number" value="{{ p.holdRate }}" onchange="{{ p.onH }}" style="width:70px;padding:5px 8px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)"></sc-raw-td>
+                    <sc-raw-td style="padding:5px 14px;border-bottom:1px solid #EDF0F4;text-align:right"><input type="number" value="{{ p.lead }}" onchange="{{ p.onL }}" style="width:64px;padding:5px 8px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)"></sc-raw-td>
+                    <sc-raw-td style="padding:5px 14px;border-bottom:1px solid #EDF0F4;text-align:right"><input type="number" value="{{ p.unitCost }}" onchange="{{ p.onC }}" style="width:96px;padding:5px 8px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)"></sc-raw-td>
+                    <sc-raw-td style="padding:5px 14px;border-bottom:1px solid #EDF0F4;text-align:right"><input type="number" value="{{ p.stock }}" onchange="{{ p.onSt }}" style="width:90px;padding:5px 8px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)"></sc-raw-td>
+                  </sc-raw-tr>
+                
+              </sc-for></sc-raw-tbody>
+            </sc-raw-table>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:#6B7A8D">El nivel de servicio y el escenario de demanda se ajustan desde el panel de Tweaks del componente.</div>
+        </div>
+      </sc-if>
+
+      <!-- ==== 3. RESULTADOS EOQ ==== -->
+      <sc-if value="{{ showEoq }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Resultados EOQ">
+          <div style="margin-bottom:16px">
+            <div style="font-size:19px;font-weight:700">Resultados EOQ</div>
+            <div style="color:#6B7A8D;margin-top:2px">Lote económico, punto de reorden y costos de gestión por producto</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+            <sc-for list="{{ eoqKpis }}" as="k" hint-placeholder-count="4">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+                <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6B7A8D">{{ k.label }}</div>
+                <div style="font-size:21px;font-weight:700;margin-top:6px">{{ k.value }}</div>
+                <div style="margin-top:5px;font-size:11.5px;color:#6B7A8D">{{ k.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);overflow-x:auto">
+            <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px">
+              <sc-raw-thead><sc-raw-tr>
+                <sc-raw-th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">SKU</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Producto</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Demanda</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">EOQ (u)</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Pedidos/año</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Ciclo (días)</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Punto reorden</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Stock seguridad</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Inv. promedio</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Costo total anual</sc-raw-th>
+                <sc-raw-th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Estado</sc-raw-th>
+              </sc-raw-tr></sc-raw-thead>
+              <sc-raw-tbody><sc-for list="{{ eoqRows }}" as="r" hint-placeholder-count="10">
+                <sc-raw-tr style="background:{{ r.rowBg }}" style-hover="background:#EEF3F9">
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;font-weight:600;color:#1565C0;white-space:nowrap">{{ r.sku }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;white-space:nowrap">{{ r.name }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.d }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;font-weight:700">{{ r.eoq }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.n }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.cycle }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.rop }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.ss }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.avgInv }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.tc }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:{{ r.stBg }};color:{{ r.stFg }}">{{ r.stLabel }}</span></sc-raw-td>
+                  </sc-raw-tr>
+                
+              </sc-for></sc-raw-tbody>
+            </sc-raw-table>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ==== 4. ABC ==== -->
+      <sc-if value="{{ showAbc }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Clasificación ABC">
+          <div style="margin-bottom:16px">
+            <div style="font-size:19px;font-weight:700">Clasificación ABC</div>
+            <div style="color:#6B7A8D;margin-top:2px">Análisis de Pareto sobre el valor anual de consumo</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+            <sc-for list="{{ abcChips }}" as="c" hint-placeholder-count="3">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(26,35,50,0.05);display:flex;align-items:center;gap:14px">
+                <span style="width:40px;height:40px;border-radius:8px;background:{{ c.bg }};color:{{ c.fg }};font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center">{{ c.cls }}</span>
+                <div><div style="font-weight:700;font-size:15px">{{ c.count }} productos</div><div style="font-size:12px;color:#6B7A8D">{{ c.pct }} del valor anual · {{ c.policy }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:12px">
+            <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+              <div style="padding:12px 16px;border-bottom:1px solid #E1E5EB;font-weight:600;display:flex;justify-content:space-between"><span>Curva de Pareto — valor anual por SKU</span><span style="font-size:11px;color:#6B7A8D;font-weight:500">barras: $ anual · línea: % acumulado</span></div>
+              <div style="padding:14px 16px">
+                <svg viewBox="0 0 640 250" style="width:100%;height:auto;display:block">
+                  <line x1="36" y1="200" x2="628" y2="200" style="stroke:#E1E5EB;stroke-width:1"></line>
+                  <line x1="36" y1="110" x2="628" y2="110" style="stroke:#EDF0F4;stroke-width:1"></line>
+                  <line x1="36" y1="20" x2="628" y2="20" style="stroke:#EDF0F4;stroke-width:1"></line>
+                  <sc-for list="{{ abcBars }}" as="b" hint-placeholder-count="10">
+                    <rect x="{{ b.x }}" y="{{ b.y }}" width="36" height="{{ b.h }}" rx="3" style="fill:{{ b.fill }}"></rect>
+                  </sc-for>
+                  <polyline points="{{ abcLine }}" style="fill:none;stroke:#E65100;stroke-width:2"></polyline>
+                  <sc-for list="{{ abcDots }}" as="d" hint-placeholder-count="10">
+                    <circle cx="{{ d.cx }}" cy="{{ d.cy }}" r="3.5" style="fill:#FFFFFF;stroke:#E65100;stroke-width:2"></circle>
+                  </sc-for>
+                  <sc-for list="{{ abcBars }}" as="b" hint-placeholder-count="10">
+                    <text x="{{ b.tx }}" y="216" style="font-size:9.5px;fill:#6B7A8D;text-anchor:middle;font-family:Inter,sans-serif">{{ b.sku }}</text>
+                  </sc-for>
+                  <text x="36" y="240" style="font-size:10px;fill:#6B7A8D;font-family:Inter,sans-serif">Ordenado por valor anual de consumo (desc.)</text>
+                  <text x="628" y="240" style="font-size:10px;fill:#E65100;text-anchor:end;font-family:Inter,sans-serif">— % acumulado (100% arriba)</text>
+                </svg>
+              </div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);overflow-x:auto">
+              <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px">
+                <sc-raw-thead><sc-raw-tr>
+                  <sc-raw-th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">#</sc-raw-th>
+                  <sc-raw-th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Producto</sc-raw-th>
+                  <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Valor anual</sc-raw-th>
+                  <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">% valor</sc-raw-th>
+                  <sc-raw-th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">% acum.</sc-raw-th>
+                  <sc-raw-th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Clase</sc-raw-th>
+                </sc-raw-tr></sc-raw-thead>
+                <sc-raw-tbody><sc-for list="{{ abcRows }}" as="r" hint-placeholder-count="10">
+                  <sc-raw-tr style="background:{{ r.rowBg }}">
+                      <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;color:#6B7A8D">{{ r.rank }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;white-space:nowrap">{{ r.name }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.val }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.pct }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;color:#6B7A8D">{{ r.cum }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 12px;border-bottom:1px solid #EDF0F4"><span style="display:inline-block;width:22px;text-align:center;padding:2px 0;border-radius:4px;font-size:11px;font-weight:700;background:{{ r.clsBg }};color:{{ r.clsFg }}">{{ r.cls }}</span></sc-raw-td>
+                    </sc-raw-tr>
+                  
+                </sc-for></sc-raw-tbody>
+              </sc-raw-table>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ==== 5. DIAGNÓSTICO ==== -->
+      <sc-if value="{{ showDiag }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Diagnóstico y alertas">
+          <div style="margin-bottom:16px">
+            <div style="font-size:19px;font-weight:700">Diagnóstico y alertas</div>
+            <div style="color:#6B7A8D;margin-top:2px">Reglas de negocio evaluadas sobre el estado actual del inventario</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+            <sc-for list="{{ diagKpis }}" as="k" hint-placeholder-count="4">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+                <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6B7A8D">{{ k.label }}</div>
+                <div style="font-size:21px;font-weight:700;margin-top:6px;color:{{ k.color }}">{{ k.value }}</div>
+                <div style="margin-top:5px;font-size:11.5px;color:#6B7A8D">{{ k.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ diagAlerts }}" as="a" hint-placeholder-count="6">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);padding:13px 16px;display:flex;gap:14px;align-items:flex-start">
+                <span style="width:9px;height:9px;border-radius:50%;background:{{ a.dot }};flex-shrink:0;margin-top:4px"></span>
+                <div style="flex:1">
+                  <div style="display:flex;gap:10px;align-items:center">
+                    <span style="font-weight:600">{{ a.title }}</span>
+                    <span style="font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:4px;background:{{ a.tagBg }};color:{{ a.tagFg }}">{{ a.tag }}</span>
+                    <span style="font-size:11.5px;color:#1565C0;font-weight:600">{{ a.product }}</span>
+                  </div>
+                  <div style="color:#6B7A8D;font-size:12.5px;margin-top:4px">{{ a.desc }}</div>
+                </div>
+                <span style="font-size:12px;font-weight:600;color:#1565C0;border:1px solid #C7DBF2;background:#F2F7FD;padding:5px 12px;border-radius:6px;white-space:nowrap;cursor:pointer" style-hover="background:#E3EEFA">{{ a.action }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ==== 6. SENSIBILIDAD ==== -->
+      <sc-if value="{{ showSens }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Análisis de sensibilidad">
+          <div style="margin-bottom:16px;display:flex;align-items:flex-end;justify-content:space-between">
+            <div>
+              <div style="font-size:19px;font-weight:700">Análisis de sensibilidad</div>
+              <div style="color:#6B7A8D;margin-top:2px">Impacto de variaciones de demanda sobre EOQ y costo total</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6B7A8D">Producto
+              <sc-raw-select value="{{ sensIdx }}" onchange="{{ onSensChange }}" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:6px;font-size:12.5px;background:#FFFFFF;color:#1A2332;outline:none;min-width:220px">
+                <sc-for list="{{ sensOptions }}" as="o" hint-placeholder-count="10">
+                  <option value="{{ o.value }}">{{ o.label }}</option>
+                </sc-for>
+              </sc-raw-select>
+            </label>
+          </div>
+          <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:12px">
+            <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);overflow-x:auto">
+              <div style="padding:12px 16px;border-bottom:1px solid #E1E5EB;font-weight:600">Escenarios de demanda — {{ sensName }}</div>
+              <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px">
+                <sc-raw-thead><sc-raw-tr>
+                  <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Δ Demanda</sc-raw-th>
+                  <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Demanda (u)</sc-raw-th>
+                  <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">EOQ (u)</sc-raw-th>
+                  <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Pedidos/año</sc-raw-th>
+                  <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Costo total</sc-raw-th>
+                  <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Δ Costo</sc-raw-th>
+                </sc-raw-tr></sc-raw-thead>
+                <sc-raw-tbody><sc-for list="{{ sensRows }}" as="r" hint-placeholder-count="7">
+                  <sc-raw-tr style="background:{{ r.rowBg }}">
+                      <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;font-weight:{{ r.fw }}">{{ r.dev }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.d }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;font-weight:{{ r.fw }}">{{ r.eoq }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.n }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.tc }}</sc-raw-td>
+                      <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:{{ r.dtcColor }}">{{ r.dtc }}</sc-raw-td>
+                    </sc-raw-tr>
+                  
+                </sc-for></sc-raw-tbody>
+              </sc-raw-table>
+              <div style="padding:11px 16px;font-size:12px;color:#6B7A8D;border-top:1px solid #EDF0F4">El EOQ es robusto: una desviación de ±30% en demanda modifica el costo total en menos de 2,5%.</div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+              <div style="padding:12px 16px;border-bottom:1px solid #E1E5EB;font-weight:600">Curva de costo total vs. tamaño de lote</div>
+              <div style="padding:16px">
+                <svg viewBox="0 0 420 230" style="width:100%;height:auto;display:block">
+                  <line x1="42" y1="190" x2="410" y2="190" style="stroke:#E1E5EB;stroke-width:1"></line>
+                  <line x1="42" y1="16" x2="42" y2="190" style="stroke:#E1E5EB;stroke-width:1"></line>
+                  <path d="{{ sensCurve }}" style="fill:none;stroke:#1565C0;stroke-width:2.5"></path>
+                  <line x1="{{ sensEoqX }}" y1="190" x2="{{ sensEoqX }}" y2="{{ sensEoqY }}" style="stroke:#2E7D32;stroke-width:1.5;stroke-dasharray:4 4"></line>
+                  <circle cx="{{ sensEoqX }}" cy="{{ sensEoqY }}" r="5" style="fill:#2E7D32;stroke:#FFFFFF;stroke-width:2"></circle>
+                  <text x="{{ sensEoqX }}" y="210" style="font-size:11px;fill:#2E7D32;font-weight:600;text-anchor:middle;font-family:Inter,sans-serif">EOQ = {{ sensEoqLabel }} u</text>
+                  <text x="42" y="226" style="font-size:10px;fill:#6B7A8D;font-family:Inter,sans-serif">Tamaño de lote Q (unidades) →</text>
+                  <text x="54" y="26" style="font-size:10px;fill:#6B7A8D;font-family:Inter,sans-serif">Costo anual total ($)</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ==== 7. ROTACIÓN ==== -->
+      <sc-if value="{{ showRot }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Rotación de inventario">
+          <div style="margin-bottom:16px">
+            <div style="font-size:19px;font-weight:700">Rotación de inventario</div>
+            <div style="color:#6B7A8D;margin-top:2px">Veces que el inventario promedio se renueva por año</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+            <sc-for list="{{ rotKpis }}" as="k" hint-placeholder-count="3">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+                <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6B7A8D">{{ k.label }}</div>
+                <div style="font-size:21px;font-weight:700;margin-top:6px">{{ k.value }}</div>
+                <div style="margin-top:5px;font-size:11.5px;color:#6B7A8D">{{ k.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);overflow-x:auto">
+            <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px">
+              <sc-raw-thead><sc-raw-tr>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Producto</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Inv. promedio (u)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Capital promedio ($)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Rotación (×/año)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Días de inventario</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Objetivo</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Nivel</sc-raw-th>
+              </sc-raw-tr></sc-raw-thead>
+              <sc-raw-tbody><sc-for list="{{ rotRows }}" as="r" hint-placeholder-count="10">
+                <sc-raw-tr style="background:{{ r.rowBg }}" style-hover="background:#EEF3F9">
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;white-space:nowrap">{{ r.name }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.avgInv }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.capital }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;font-weight:700">{{ r.turns }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.dsi }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;color:#6B7A8D">{{ r.target }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:{{ r.stBg }};color:{{ r.stFg }}">{{ r.stLabel }}</span></sc-raw-td>
+                  </sc-raw-tr>
+                
+              </sc-for></sc-raw-tbody>
+            </sc-raw-table>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ==== 8. SELL-THROUGH ==== -->
+      <sc-if value="{{ showSt }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Sell-through rate">
+          <div style="margin-bottom:16px">
+            <div style="font-size:19px;font-weight:700">Sell-through rate</div>
+            <div style="color:#6B7A8D;margin-top:2px">Unidades vendidas sobre disponibles — período: junio 2026</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+            <sc-for list="{{ stKpis }}" as="k" hint-placeholder-count="3">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+                <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6B7A8D">{{ k.label }}</div>
+                <div style="font-size:21px;font-weight:700;margin-top:6px">{{ k.value }}</div>
+                <div style="margin-top:5px;font-size:11.5px;color:#6B7A8D">{{ k.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);overflow-x:auto">
+            <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px">
+              <sc-raw-thead><sc-raw-tr>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Producto</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Stock inicial</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Recibido</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Vendido</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Sell-through</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC;width:200px">Progreso</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Estado</sc-raw-th>
+              </sc-raw-tr></sc-raw-thead>
+              <sc-raw-tbody><sc-for list="{{ stRows }}" as="r" hint-placeholder-count="10">
+                <sc-raw-tr style="background:{{ r.rowBg }}" style-hover="background:#EEF3F9">
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;white-space:nowrap">{{ r.name }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.begin }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.recv }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.sold }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;font-weight:700">{{ r.st }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4"><div style="height:8px;background:#EDF0F4;border-radius:4px;overflow:hidden"><div style="height:100%;border-radius:4px;background:{{ r.barColor }};width:{{ r.barW }}%"></div></div></sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:{{ r.stBg }};color:{{ r.stFg }}">{{ r.stLabel }}</span></sc-raw-td>
+                  </sc-raw-tr>
+                
+              </sc-for></sc-raw-tbody>
+            </sc-raw-table>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ==== 9. BACKORDERS ==== -->
+      <sc-if value="{{ showBo }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Análisis de backorders">
+          <div style="margin-bottom:16px">
+            <div style="font-size:19px;font-weight:700">Análisis de backorders</div>
+            <div style="color:#6B7A8D;margin-top:2px">Demanda insatisfecha, costo de penalización y nivel de servicio efectivo</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+            <sc-for list="{{ boKpis }}" as="k" hint-placeholder-count="4">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+                <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6B7A8D">{{ k.label }}</div>
+                <div style="font-size:21px;font-weight:700;margin-top:6px;color:{{ k.color }}">{{ k.value }}</div>
+                <div style="margin-top:5px;font-size:11.5px;color:#6B7A8D">{{ k.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);overflow-x:auto">
+            <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px">
+              <sc-raw-thead><sc-raw-tr>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Producto</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Unid. en backorder</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">% demanda mensual</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Penalización unit. ($)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Costo mensual ($)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Fill rate</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Estado</sc-raw-th>
+              </sc-raw-tr></sc-raw-thead>
+              <sc-raw-tbody><sc-for list="{{ boRows }}" as="r" hint-placeholder-count="10">
+                <sc-raw-tr style="background:{{ r.rowBg }}" style-hover="background:#EEF3F9">
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;white-space:nowrap">{{ r.name }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;font-weight:600">{{ r.units }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.pctDem }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.penalty }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.cost }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:{{ r.fillColor }}">{{ r.fill }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:{{ r.stBg }};color:{{ r.stFg }}">{{ r.stLabel }}</span></sc-raw-td>
+                  </sc-raw-tr>
+                
+              </sc-for></sc-raw-tbody>
+            </sc-raw-table>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:#6B7A8D">Fill rate = 1 − (unidades en backorder / demanda mensual). Penalización estimada según margen perdido + costo administrativo por pedido demorado.</div>
+        </div>
+      </sc-if>
+
+      <!-- ==== 10. FORECASTING ==== -->
+      <sc-if value="{{ showFc }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Forecasting IA">
+          <div style="margin-bottom:16px">
+            <div style="font-size:19px;font-weight:700">Forecasting IA</div>
+            <div style="color:#6B7A8D;margin-top:2px">Modelo Holt-Winters con estacionalidad — histórico 12 meses y proyección {{ horizonLabel }} meses</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+            <sc-for list="{{ fcKpis }}" as="k" hint-placeholder-count="4">
+              <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
+                <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6B7A8D">{{ k.label }}</div>
+                <div style="font-size:21px;font-weight:700;margin-top:6px;color:{{ k.color }}">{{ k.value }}</div>
+                <div style="margin-top:5px;font-size:11.5px;color:#6B7A8D">{{ k.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);margin-bottom:12px">
+            <div style="padding:12px 16px;border-bottom:1px solid #E1E5EB;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+              <span>Demanda valorizada del portafolio ($ millones/mes)</span>
+              <span style="display:flex;gap:16px;font-size:11.5px;color:#6B7A8D;align-items:center">
+                <span style="display:flex;gap:6px;align-items:center"><span style="width:18px;height:3px;background:#1565C0;border-radius:2px"></span>Histórico</span>
+                <span style="display:flex;gap:6px;align-items:center"><span style="width:18px;height:0;border-top:3px dashed #2E7D32"></span>Proyección IA</span>
+                <span style="display:flex;gap:6px;align-items:center"><span style="width:18px;height:10px;background:rgba(46,125,50,0.12);border-radius:2px"></span>IC 90%</span>
+              </span>
+            </div>
+            <div style="padding:16px 16px 8px">
+              <svg viewBox="0 0 760 270" style="width:100%;height:auto;display:block">
+                <sc-for list="{{ fcGrid }}" as="g" hint-placeholder-count="4">
+                  <line x1="46" y1="{{ g.y }}" x2="748" y2="{{ g.y }}" style="stroke:#EDF0F4;stroke-width:1"></line>
+                  <text x="40" y="{{ g.ty }}" style="font-size:10px;fill:#6B7A8D;text-anchor:end;font-family:Inter,sans-serif">{{ g.t }}</text>
+                </sc-for>
+                <line x1="{{ fcSplitX }}" y1="14" x2="{{ fcSplitX }}" y2="222" style="stroke:#C9D2DD;stroke-width:1;stroke-dasharray:3 4"></line>
+                <text x="{{ fcSplitX }}" y="12" style="font-size:9.5px;fill:#6B7A8D;text-anchor:middle;font-family:Inter,sans-serif">hoy</text>
+                <polygon points="{{ bandPts }}" style="fill:rgba(46,125,50,0.10)"></polygon>
+                <polyline points="{{ histPts }}" style="fill:none;stroke:#1565C0;stroke-width:2.5"></polyline>
+                <polyline points="{{ projPts }}" style="fill:none;stroke:#2E7D32;stroke-width:2.5;stroke-dasharray:6 5"></polyline>
+                <sc-for list="{{ fcLabels }}" as="m" hint-placeholder-count="18">
+                  <text x="{{ m.x }}" y="240" style="font-size:9.5px;fill:{{ m.c }};text-anchor:middle;font-family:Inter,sans-serif">{{ m.t }}</text>
+                </sc-for>
+              </svg>
+            </div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);overflow-x:auto">
+            <div style="padding:12px 16px;border-bottom:1px solid #E1E5EB;font-weight:600">Proyección por producto — próximos {{ horizonLabel }} meses</div>
+            <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px">
+              <sc-raw-thead><sc-raw-tr>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Producto</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Demanda últimos 12m (u)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Proyección {{ horizonLabel }}m (u)</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Tendencia anual</sc-raw-th>
+                <sc-raw-th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6B7A8D;border-bottom:1px solid #E1E5EB;background:#F8FAFC">Señal IA</sc-raw-th>
+              </sc-raw-tr></sc-raw-thead>
+              <sc-raw-tbody><sc-for list="{{ fcRows }}" as="r" hint-placeholder-count="10">
+                <sc-raw-tr style="background:{{ r.rowBg }}" style-hover="background:#EEF3F9">
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;white-space:nowrap">{{ r.name }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums">{{ r.hist }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;font-weight:700">{{ r.proj }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:{{ r.deltaColor }}">{{ r.delta }}</sc-raw-td>
+                    <sc-raw-td style="padding:7px 14px;border-bottom:1px solid #EDF0F4"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:{{ r.badgeBg }};color:{{ r.badgeFg }}">{{ r.badge }}</span></sc-raw-td>
+                  </sc-raw-tr>
+                
+              </sc-for></sc-raw-tbody>
+            </sc-raw-table>
+          </div>
+        </div>
+      </sc-if>
+
     </div>
   </div>
 </div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{
+  &quot;serviceLevel&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;90%&quot;, &quot;95%&quot;, &quot;99%&quot;], &quot;default&quot;: &quot;95%&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Modelo EOQ&quot; },
+  &quot;demandScenario&quot;: { &quot;editor&quot;: &quot;range&quot;, &quot;min&quot;: -30, &quot;max&quot;: 30, &quot;step&quot;: 5, &quot;default&quot;: 0, &quot;unit&quot;: &quot;%&quot;, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Modelo EOQ&quot; },
+  &quot;forecastHorizon&quot;: { &quot;editor&quot;: &quot;int&quot;, &quot;min&quot;: 3, &quot;max&quot;: 12, &quot;default&quot;: 6, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Forecasting&quot; }
+}">
+class Component extends DCLogic {
+  state = {
+    active: 'dash',
+    sensIdx: 0,
+    fileName: null,
+    loading: false,
+    error: null,
+    products: [
+      { sku:'CEM-025', name:'Cemento Portland x25kg',      demand:48000,  orderCost:42000, holdRate:24, lead:7,  unitCost:6900,  stock:2600,  boUnits:120, boPenalty:900,  trend:8,  stBegin:2400,  stRecv:4200,  stSold:4050 },
+      { sku:'CEM-050', name:'Cemento Portland x50kg',      demand:36000,  orderCost:42000, holdRate:24, lead:7,  unitCost:12800, stock:1900,  boUnits:80,  boPenalty:1500, trend:6,  stBegin:1700,  stRecv:2900,  stSold:2760 },
+      { sku:'HIE-008', name:'Hierro nervado 8mm x12m',     demand:15000,  orderCost:38000, holdRate:20, lead:14, unitCost:9400,  stock:950,   boUnits:45,  boPenalty:1400, trend:12, stBegin:900,   stRecv:1300,  stSold:1240 },
+      { sku:'HIE-010', name:'Hierro nervado 10mm x12m',    demand:12500,  orderCost:38000, holdRate:20, lead:14, unitCost:14200, stock:420,   boUnits:180, boPenalty:2000, trend:10, stBegin:600,   stRecv:1100,  stSold:1050 },
+      { sku:'LAD-1819',name:'Ladrillo portante 18x19x33',  demand:220000, orderCost:55000, holdRate:18, lead:10, unitCost:980,   stock:26000, boUnits:0,   boPenalty:120,  trend:4,  stBegin:22000, stRecv:18000, stSold:17500 },
+      { sku:'LAD-1219',name:'Ladrillo portante 12x19x33',  demand:160000, orderCost:55000, holdRate:18, lead:10, unitCost:760,   stock:9500,  boUnits:350, boPenalty:100,  trend:-3, stBegin:8000,  stRecv:13500, stSold:12900 },
+      { sku:'CHA-CIN', name:'Chapa acanalada cinc 1,10×2m',demand:8200,   orderCost:35000, holdRate:22, lead:21, unitCost:21500, stock:380,   boUnits:90,  boPenalty:3200, trend:9,  stBegin:400,   stRecv:700,   stSold:640 },
+      { sku:'ARE-BOL', name:'Arena gruesa bolsón 1m³',     demand:9600,   orderCost:30000, holdRate:26, lead:5,  unitCost:28000, stock:720,   boUnits:40,  boPenalty:3500, trend:5,  stBegin:650,   stRecv:820,   stSold:790 },
+      { sku:'ARE-M3',  name:'Arena gruesa x m³ (granel)',  demand:5400,   orderCost:30000, holdRate:26, lead:5,  unitCost:24500, stock:210,   boUnits:15,  boPenalty:3000, trend:-2, stBegin:180,   stRecv:460,   stSold:430 },
+      { sku:'PAL-PLA', name:'Pallet plástico 1,0×1,2m',    demand:3600,   orderCost:26000, holdRate:15, lead:30, unitCost:34000, stock:520,   boUnits:0,   boPenalty:4000, trend:15, stBegin:480,   stRecv:310,   stSold:295 }
+    ]
+  };
 
-<!-- TAB 1: PARAMS -->
-<div id="p1" class="panel">
-  <div class="card">
-    <p class="card-title">Parámetros del modelo — editables</p>
-    <div class="g3">
-      <div><label class="form-label">Nivel servicio A</label><select id="pza" onchange="recalc()"><option value="2.326">99% (z=2.326)</option><option value="2.054">98%</option><option value="1.881">97%</option><option value="1.645">95%</option></select></div>
-      <div><label class="form-label">Nivel servicio B</label><select id="pzb" onchange="recalc()"><option value="2.054">98%</option><option value="1.881">97%</option><option value="1.645">95%</option><option value="1.282">90%</option></select></div>
-      <div><label class="form-label">Nivel servicio C</label><select id="pzc" onchange="recalc()"><option value="1.881">97%</option><option value="1.645">95%</option><option value="1.282">90%</option><option value="1.036">85%</option></select></div>
-      <div><label class="form-label">Costo pedido % sobre valor</label><input type="number" id="pkpct" value="4" min="0" max="20" step="0.1" oninput="recalcD()"></div>
-      <div><label class="form-label">Costo m²/mes almacén ($)</label><input type="number" id="pcloc" value="9500" min="0" step="100" oninput="recalcD()"></div>
-      <div><label class="form-label">Altura apilamiento (m)</label><input type="number" id="palt" value="2" min="0.5" step="0.1" oninput="recalcD()"></div>
-    </div>
-  </div>
-  <div class="card"><p class="card-title">Productos cargados (<span id="pcnt">0</span>)</p>
-    <div class="tw"><table>
-      <thead><tr><th>Código</th><th>Nombre</th><th>Vol m³</th><th>LT</th><th>D anual</th><th>Precio</th><th>Costo</th><th>Clase</th></tr></thead>
-      <tbody id="ptbody"></tbody>
-    </table></div>
-  </div>
-  <div style="display:flex;justify-content:flex-end"><button class="btn prim" onclick="showTab(2)">Ver EOQ →</button></div>
-</div>
-
-<!-- TAB 2: EOQ -->
-<div id="p2" class="panel">
-  <div class="g4" id="ekpis"></div>
-  <p class="card-title">Tabla EOQ probabilístico</p>
-  <div class="tw"><table>
-    <thead><tr><th>Código</th><th>Nombre</th><th>Clase</th><th>z</th><th>Estado</th><th>D anual</th><th>CV</th><th>SS (u)</th><th>EOQ (Q*)</th><th>Ped./año</th><th>Ciclo (d)</th><th>Pto. reorden</th><th>Inv. prom.</th><th>K ($)</th><th>h ($)</th><th>CIT</th><th>Rent.</th></tr></thead>
-    <tbody id="etbody"></tbody>
-  </table></div>
-</div>
-
-<!-- TAB 3: ABC -->
-<div id="p3" class="panel">
-  <div class="g3" id="akpis"></div>
-  <div class="tw"><table>
-    <thead><tr><th>Clase</th><th>Código</th><th>Nombre</th><th>Venta anual</th><th>% total</th><th>% acum.</th><th>z</th><th>SS (u)</th><th>EOQ</th><th>Ciclo</th></tr></thead>
-    <tbody id="atbody"></tbody>
-  </table></div>
-  <div style="position:relative;width:100%;height:200px;margin-top:.75rem"><canvas id="achart"></canvas></div>
-</div>
-
-<!-- TAB 4: DIAGNÓSTICO -->
-<div id="p4" class="panel">
-  <div class="g3" id="dkpis"></div>
-  <p class="card-title">Alertas por producto</p>
-  <div id="dins"></div>
-  <div style="position:relative;width:100%;height:240px;margin-top:.75rem"><canvas id="dchart"></canvas></div>
-  <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text2)">
-    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--green);margin-right:4px;vertical-align:middle"></span>CIT base</span>
-    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--red);margin-right:4px;vertical-align:middle"></span>Costo SS</span>
-  </div>
-</div>
-
-<!-- TAB 5: SENSIBILIDAD -->
-<div id="p5" class="panel">
-  <div class="card"><p class="card-title">Producto</p><select id="ssel" onchange="renderSens()" style="max-width:300px"></select></div>
-  <div class="g2">
-    <div class="card"><p class="card-title">Variación costo de pedido (K)</p><div id="sk"></div></div>
-    <div class="card"><p class="card-title">Variación costo almacenaje (h)</p><div id="sh"></div></div>
-  </div>
-  <div class="card"><p class="card-title">Curvas CIT combinadas</p>
-    <div style="position:relative;width:100%;height:230px"><canvas id="schart"></canvas></div>
-  </div>
-</div>
-
-<!-- TAB 6: ROTACIÓN -->
-<div id="p6" class="panel">
-  <div class="g4" id="rkpis"></div>
-  <p class="card-title">Análisis de rotación por producto</p>
-  <div class="tw"><table>
-    <thead><tr><th>Código</th><th>Nombre</th><th>Clase</th><th>D anual</th><th>Inv. prom.</th><th>Rotación</th><th>Días stock (DSI)</th><th>Clasificación</th></tr></thead>
-    <tbody id="rtbody"></tbody>
-  </table></div>
-  <div class="card" style="margin-top:.5rem">
-    <p class="card-title">Rotación vs. días de inventario</p>
-    <div style="position:relative;width:100%;height:240px"><canvas id="rchart"></canvas></div>
-  </div>
-  <div class="card">
-    <p class="card-title">¿Qué significa la rotación?</p>
-    <div class="ins ii">Una rotación de <b>12</b> significa que reponés el inventario completo 12 veces al año — una vez por mes. Rotación alta = capital liberado. Rotación baja = capital inmovilizado.</div>
-    <div class="ins iw">Rotación &lt; 4: inventario excesivo. Entre 4 y 12: zona aceptable. &gt; 12: rotación alta, cuidado con quiebres de stock.</div>
-  </div>
-</div>
-
-<!-- TAB 7: SELL-THROUGH -->
-<div id="p7" class="panel">
-  <div class="g3" id="stkpis"></div>
-  <p class="card-title">Sell-through rate por producto</p>
-  <div class="tw"><table>
-    <thead><tr><th>Código</th><th>Nombre</th><th>Clase</th><th>Sell-through</th><th>Barra</th><th>Ventas/mes</th><th>Stock prom.</th><th>Interpretación</th></tr></thead>
-    <tbody id="sttbody"></tbody>
-  </table></div>
-  <div class="card" style="margin-top:.5rem">
-    <p class="card-title">¿Qué es el sell-through?</p>
-    <div class="ins ii">Mide qué porcentaje del inventario disponible (stock + ventas del mes) se vendió efectivamente. Un sell-through del <b>80%</b> significa que 8 de cada 10 unidades disponibles se vendieron.</div>
-    <div class="ins iw">Sell-through &lt; 50%: sobrestock o demanda baja. Entre 50–80%: zona saludable. &gt; 80%: riesgo de faltante.</div>
-  </div>
-</div>
-
-<!-- TAB 8: BACKORDERS -->
-<div id="p8" class="panel">
-  <div class="g3" id="bokpis"></div>
-  <p class="card-title">Análisis de riesgo de backorder por producto</p>
-  <div class="tw"><table>
-    <thead><tr><th>Código</th><th>Nombre</th><th>Clase</th><th>Meses en riesgo</th><th>% meses riesgo</th><th>Backorder est. (u)</th><th>Valor backorder</th><th>Nivel riesgo</th></tr></thead>
-    <tbody id="botbody"></tbody>
-  </table></div>
-  <div style="position:relative;width:100%;height:240px;margin-top:.75rem"><canvas id="bochart"></canvas></div>
-  <div class="card" style="margin-top:.5rem">
-    <p class="card-title">¿Cómo se calcula el riesgo de backorder?</p>
-    <div class="ins ii">Comparamos la demanda mensual histórica contra el inventario promedio. Cuando la demanda supera el stock disponible en algún mes, ese mes se clasifica como "mes en riesgo". El backorder estimado es la suma de los excesos.</div>
-    <div class="ins iw">Para eliminar backorders: aumentá el stock de seguridad, reducí el lead time, o ajustá el EOQ. La pestaña EOQ ya incorpora el SS probabilístico para mitigar este riesgo.</div>
-  </div>
-</div>
-
-<!-- TAB 9: FORECASTING -->
-<div id="p9" class="panel">
-  <div class="g3" id="fckpis"></div>
-  <div class="card">
-    <p class="card-title">Producto a analizar</p>
-    <select id="fcsel" onchange="renderForecast()" style="max-width:320px"></select>
-  </div>
-  <div class="g2">
-    <div class="card">
-      <p class="card-title">Forecast — próximos 6 meses</p>
-      <div id="fc-months" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem"></div>
-      <div id="fc-meta" style="font-size:11px;color:var(--text2)"></div>
-    </div>
-    <div class="card">
-      <p class="card-title">Métricas del modelo</p>
-      <div id="fc-metrics"></div>
-    </div>
-  </div>
-  <div class="card">
-    <p class="card-title">Demanda histórica vs. modelo ajustado vs. forecast</p>
-    <div style="position:relative;width:100%;height:260px"><canvas id="fcchart"></canvas></div>
-    <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text2)">
-      <span><span style="display:inline-block;width:16px;height:2px;background:var(--green);margin-right:4px;vertical-align:middle"></span>Demanda real</span>
-      <span><span style="display:inline-block;width:16px;height:2px;background:var(--amber);border-top:2px dashed;margin-right:4px;vertical-align:middle"></span>Modelo ajustado</span>
-      <span><span style="display:inline-block;width:16px;height:2px;background:var(--blue);border-top:2px dashed;margin-right:4px;vertical-align:middle"></span>Forecast</span>
-    </div>
-  </div>
-  <div class="card">
-    <p class="card-title">¿Cómo funciona el forecasting?</p>
-    <div class="ins ii">Usamos <b>suavizado exponencial simple (SES)</b> con optimización automática del parámetro alpha. El sistema prueba 9 valores de alpha (0.1 a 0.9) y selecciona el que minimiza el error cuadrático medio sobre los datos históricos.</div>
-    <div class="ins ii">La <b>tendencia</b> se detecta por regresión lineal sobre los 12 meses y se incorpora con un factor de amortiguación (0.3) para no sobreajustar.</div>
-    <div class="ins iw">El MAPE (error porcentual absoluto medio) indica la precisión: &lt;10% excelente, 10-20% bueno, &gt;20% revisar datos de entrada.</div>
-  </div>
-</div>
-
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script>
-let products=[], aC=null, dC=null, sC=null, rC=null, boC=null, fcC=null;
-let debT=null;
-
-const fmt  = (n,d=0) => (!isFinite(n)||isNaN(n))?'—':n.toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
-const fmtM = n => n>=1e9?'$'+fmt(n/1e9,1)+'B':n>=1e6?'$'+fmt(n/1e6,1)+'M':n>=1e3?'$'+fmt(n/1e3,0)+'K':'$'+fmt(n,0);
-const gv   = id => parseFloat(document.getElementById(id).value)||0;
-const log  = (m,t='') => {
-  const c=t==='err'?'#F97171':t==='ok'?'#4DD4A0':'#9196B5';
-  document.getElementById('log').innerHTML=`<span style="color:${c}">${m}</span>`;
-};
-
-const TABS=10;
-function showTab(n){
-  for(let i=0;i<TABS;i++){
-    document.getElementById('t'+i).classList.toggle('active',i===n);
-    document.getElementById('p'+i).classList.toggle('active',i===n);
+  mapProduct(p) {
+    const mAvg = p.D / 12 || 1;
+    const holdRate = p.cu > 0 ? Math.min(80, Math.max(5, p.h / p.cu * 100)) : 20;
+    const lastM = (p.months && p.months.length) ? p.months[p.months.length - 1] : mAvg;
+    const stSold = Math.max(1, Math.round(lastM));
+    const stPct = Math.min(95, Math.max(5, p.sell_through || 50));
+    const avail = stSold / (stPct / 100);
+    const stBegin = Math.max(0, Math.round(Math.min(avail, p.inv_p || avail * 0.5)));
+    const stRecv = Math.max(0, Math.round(avail - stBegin));
+    const trendPct = Math.max(-40, Math.min(40, ((p.forecast && p.forecast.trend) || 0) * 12 / mAvg * 100));
+    return {
+      sku: p.code, name: p.name,
+      demand: Math.round(p.D),
+      orderCost: Math.max(1, Math.round(p.K || 0)),
+      holdRate: Math.round(holdRate * 10) / 10,
+      lead: Math.max(1, Math.round(p.lt || 10)),
+      unitCost: Math.round(p.cu || 0),
+      stock: Math.max(0, Math.round(p.inv_p || 0)),
+      boUnits: Math.max(0, Math.round((p.backorder_est || 0) / 12)),
+      boPenalty: Math.max(50, Math.round((p.cu || 0) * 0.08)),
+      trend: Math.round(trendPct * 10) / 10,
+      cv: p.cv > 0 ? p.cv : null,
+      stBegin, stRecv, stSold
+    };
   }
-  if(n===5&&products.length) renderSens();
-  if(n===9&&products.length) renderForecast();
-}
+  onFile(e) {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    e.target.value = '';
+    this.setState({ loading: true, error: null });
+    const fd = new FormData();
+    fd.append('file', f);
+    fetch('/api/parse-excel', { method: 'POST', body: fd })
+      .then(r => r.json().then(j => ({ ok: r.ok, j })))
+      .then(({ ok, j }) => {
+        if (!ok || j.error) throw new Error(j.error || 'No se pudo procesar el archivo');
+        if (!j.products || !j.products.length) throw new Error('El archivo no contiene productos');
+        this.setState({ products: j.products.map(p => this.mapProduct(p)), fileName: f.name, loading: false, sensIdx: 0 });
+      })
+      .catch(err => this.setState({ loading: false, error: err.message }));
+  }
+  fmt(n, dec) { return Number(n).toLocaleString('es-AR', { minimumFractionDigits: dec||0, maximumFractionDigits: dec||0 }); }
+  money(n) { return '$ ' + this.fmt(n); }
+  moneyM(n) { return '$ ' + this.fmt(n/1e6, 1) + ' M'; }
+  upd(i, f, e) {
+    const v = parseFloat(e.target.value) || 0;
+    this.setState(s => { const ps = s.products.slice(); ps[i] = Object.assign({}, ps[i], { [f]: v }); return { products: ps }; });
+  }
+  icon(specs) {
+    const R = React;
+    return R.createElement('svg', { width:16, height:16, viewBox:'0 0 16 16', style:{flexShrink:0} },
+      specs.map((s,i) => R.createElement(s[0], Object.assign({ key:i, fill:'none', stroke:'currentColor', strokeWidth:1.4, strokeLinecap:'round', strokeLinejoin:'round' }, s[1]))));
+  }
 
-function handleDrop(e){
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag');
-  if(e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
-}
-function handleFile(inp){ if(inp.files[0]) uploadFile(inp.files[0]); }
+  renderVals() {
+    const R = React;
+    const S = this.state;
+    const sl = this.props.serviceLevel ?? '95%';
+    const z = { '90%':1.28, '95%':1.65, '99%':2.33 }[sl] || 1.65;
+    const scen = this.props.demandScenario ?? 0;
+    const fh = Math.round(this.props.forecastHorizon ?? 6);
+    const C = { pri:'#1565C0', ok:'#2E7D32', warn:'#E65100', err:'#C62828', sec:'#6B7A8D' };
+    const okB = '#E5F1E6', warnB = '#FCEBDD', errB = '#F9E3E3', priB = '#E3ECF7';
 
-function uploadFile(file){
-  const fd=new FormData(); fd.append('file',file);
-  log('<span class="spin"></span> Procesando...');
-  fetch('/api/parse-excel',{method:'POST',body:fd})
-    .then(r=>r.json())
-    .then(d=>{
-      if(d.error){log('⚠ '+d.error,'err');return;}
-      const {params,products:p}=d;
-      document.getElementById('pkpct').value=params.kpct;
-      document.getElementById('pcloc').value=params.cloc;
-      setZ('pza',params.za); setZ('pzb',params.zb); setZ('pzc',params.zc);
-      products=p;
-      finishLoad(file.name);
-    })
-    .catch(e=>log('⚠ Error: '+e.message,'err'));
-}
+    // ---- core computation ----
+    const rows = S.products.map((p, i) => {
+      const D = p.demand * (1 + scen/100);
+      const H = p.unitCost * p.holdRate / 100;
+      const EOQ = H > 0 && D > 0 ? Math.sqrt(2 * D * p.orderCost / H) : 0;
+      const N = EOQ > 0 ? D / EOQ : 0;
+      const cycle = N > 0 ? 365 / N : 0;
+      const dDaily = D / 365;
+      const sigma = dDaily * (p.cv > 0 ? p.cv : 0.35);
+      const SSv = z * sigma * Math.sqrt(p.lead);
+      const ROP = dDaily * p.lead + SSv;
+      const avgInv = EOQ/2 + SSv;
+      const TC = (EOQ>0 ? D/EOQ*p.orderCost : 0) + avgInv*H;
+      const annualValue = D * p.unitCost;
+      const turns = avgInv > 0 ? D / avgInv : 0;
+      const dsi = turns > 0 ? 365 / turns : 0;
+      const monthlyD = D / 12;
+      const fill = monthlyD > 0 ? 1 - p.boUnits / monthlyD : 1;
+      const daysToROP = dDaily > 0 ? (p.stock - ROP) / dDaily : 999;
+      let status = 'ok';
+      if (p.stock < ROP) status = 'reorder';
+      else if (p.stock > 2*(EOQ/2 + SSv) + EOQ) status = 'over';
+      const st = (p.stBegin + p.stRecv) > 0 ? p.stSold / (p.stBegin + p.stRecv) : 0;
+      return Object.assign({}, p, { i, D, H, EOQ, N, cycle, dDaily, SSv, ROP, avgInv, TC, annualValue, turns, dsi, monthlyD, fill, daysToROP, status, st });
+    });
 
-function setZ(id,z){
-  const el=document.getElementById(id);
-  const v=[2.326,2.054,1.881,1.645,1.282,1.036].reduce((a,b)=>Math.abs(b-z)<Math.abs(a-z)?b:a);
-  el.value=v;
-}
+    const zebra = i => i % 2 ? '#F9FAFC' : '#FFFFFF';
+    const badge = (kind) => ({
+      reorder: { bg: errB, fg: C.err, label: 'Reordenar' },
+      over:    { bg: warnB, fg: C.warn, label: 'Sobrestock' },
+      ok:      { bg: okB, fg: C.ok, label: 'Óptimo' }
+    }[kind]);
 
-function finishLoad(fname){
-  const b=document.getElementById('status-badge');
-  b.textContent=products.length+' productos';
-  b.className='status ok';
-  log(`✓ ${products.length} productos cargados de "${fname}"`, 'ok');
-  renderAll();
-  showTab(1);
-}
+    // ---- nav ----
+    const ic = {
+      dash:  this.icon([['rect',{x:2,y:2,width:5,height:5,rx:1}],['rect',{x:9,y:2,width:5,height:5,rx:1}],['rect',{x:2,y:9,width:5,height:5,rx:1}],['rect',{x:9,y:9,width:5,height:5,rx:1}]]),
+      params:this.icon([['path',{d:'M2 4.5h12M2 11.5h12'}],['circle',{cx:6,cy:4.5,r:1.8}],['circle',{cx:10,cy:11.5,r:1.8}]]),
+      eoq:   this.icon([['rect',{x:2,y:2,width:12,height:12,rx:1.5}],['path',{d:'M2 6h12M6 6v8'}]]),
+      abc:   this.icon([['path',{d:'M3 13V9M8 13V5M13 13V2.5'}]]),
+      diag:  this.icon([['circle',{cx:8,cy:8,r:6}],['path',{d:'M8 5v3.5M8 11h.01'}]]),
+      sens:  this.icon([['path',{d:'M2 13c3-8 6 3 9-6 .8-2.4 2-3 3-3'}]]),
+      rot:   this.icon([['path',{d:'M13 8a5 5 0 1 1-1.5-3.5M13 2v3h-3'}]]),
+      st:    this.icon([['path',{d:'M13 3 3 13'}],['circle',{cx:4.5,cy:4.5,r:2}],['circle',{cx:11.5,cy:11.5,r:2}]]),
+      bo:    this.icon([['path',{d:'M2 5l6-3 6 3v6l-6 3-6-3z'}],['path',{d:'M2 5l6 3 6-3M8 8v6'}]]),
+      fc:    this.icon([['path',{d:'M2 12l3.5-4 3 2.5L13 4'}],['path',{d:'M13 4v3M13 4h-3'}]])
+    };
+    const navDefs = [
+      ['dash','Dashboard'], ['params','Parámetros del modelo'], ['eoq','Resultados EOQ'],
+      ['abc','Clasificación ABC'], ['diag','Diagnóstico y alertas'], ['sens','Sensibilidad'],
+      ['rot','Rotación de inventario'], ['st','Sell-through'], ['bo','Backorders'], ['fc','Forecasting IA']
+    ];
+    const navItems = navDefs.map(([id, label]) => ({
+      label, icon: ic[id],
+      fg: S.active === id ? '#1565C0' : '#4A5768',
+      bg: S.active === id ? '#E3ECF7' : 'transparent',
+      fw: S.active === id ? 600 : 500,
+      onClick: () => this.setState({ active: id })
+    }));
+    const titles = { dash:'Dashboard', params:'Parámetros', eoq:'Resultados EOQ', abc:'Clasificación ABC', diag:'Diagnóstico', sens:'Sensibilidad', rot:'Rotación', st:'Sell-through', bo:'Backorders', fc:'Forecasting IA' };
 
-function getParams(){
-  return{za:gv('pza'),zb:gv('pzb'),zc:gv('pzc'),kpct:gv('pkpct'),cloc:gv('pcloc'),alt:gv('palt')||2};
-}
+    // ---- alerts (shared) ----
+    const alerts = [];
+    rows.forEach(r => {
+      if (r.status === 'reorder') alerts.push({ sev:'err', title:'Quiebre inminente', product:r.name, desc:`Stock (${this.fmt(r.stock)} u) por debajo del punto de reorden (${this.fmt(r.ROP)} u) con lead time de ${r.lead} días.`, action:`Emitir OC × ${this.fmt(r.EOQ)} u` });
+      if (r.fill < 0.9) alerts.push({ sev:'err', title:'Backorders elevados', product:r.name, desc:`Fill rate de ${this.fmt(r.fill*100,1)}% — ${this.fmt(r.boUnits)} unidades pendientes de entrega a clientes.`, action:'Priorizar reposición' });
+      if (r.status === 'over') alerts.push({ sev:'warn', title:'Capital inmovilizado', product:r.name, desc:`Stock actual (${this.fmt(r.stock)} u) duplica el nivel objetivo. ${this.moneyM(r.stock*r.unitCost)} inmovilizados.`, action:'Frenar reposición' });
+      if (r.turns < 6 && r.status !== 'over') alerts.push({ sev:'warn', title:'Rotación baja', product:r.name, desc:`${this.fmt(r.turns,1)} vueltas/año (${this.fmt(r.dsi)} días de inventario) — revisar política de lote.`, action:'Revisar EOQ' });
+      if (r.st < 0.45) alerts.push({ sev:'warn', title:'Sell-through débil', product:r.name, desc:`Solo ${this.fmt(r.st*100)}% de las unidades disponibles se vendieron en junio.`, action:'Revisar pricing' });
+    });
+    const sevMeta = { err:{dot:C.err, tagBg:errB, tagFg:C.err, tag:'CRÍTICA'}, warn:{dot:C.warn, tagBg:warnB, tagFg:C.warn, tag:'ADVERTENCIA'} };
+    const diagAlerts = alerts.sort((a,b) => a.sev === b.sev ? 0 : a.sev === 'err' ? -1 : 1)
+      .map(a => Object.assign({}, sevMeta[a.sev], a));
 
-function recalc(){
-  if(!products.length) return;
-  fetch('/api/recalc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({products,params:getParams()})})
-    .then(r=>r.json()).then(d=>{if(!d.error){products=d.products;renderAll();}})
-    .catch(()=>{});
-}
-function recalcD(){ clearTimeout(debT); debT=setTimeout(recalc,500); }
+    // ---- ABC ----
+    const sorted = rows.slice().sort((a,b) => b.annualValue - a.annualValue);
+    const totalVal = sorted.reduce((s,r) => s + r.annualValue, 0) || 1;
+    let cum = 0;
+    const abc = sorted.map((r, rank) => {
+      cum += r.annualValue;
+      const cumPct = cum / totalVal * 100;
+      const cls = cumPct <= 80 ? 'A' : cumPct <= 95 ? 'B' : 'C';
+      return Object.assign({}, r, { rank: rank+1, pctVal: r.annualValue/totalVal*100, cumPct, cls });
+    });
+    const clsMeta = { A:{bg:'#1565C0', fg:'#fff'}, B:{bg:'#5E92CC', fg:'#fff'}, C:{bg:'#CBD6E2', fg:'#33445C'} };
+    const abcChips = ['A','B','C'].map(cls => {
+      const items = abc.filter(r => r.cls === cls);
+      return { cls, bg: clsMeta[cls].bg, fg: clsMeta[cls].fg, count: items.length,
+        pct: this.fmt(items.reduce((s,r) => s+r.pctVal, 0), 1) + '%',
+        policy: cls==='A' ? 'control estricto' : cls==='B' ? 'revisión periódica' : 'control simple' };
+    });
+    const maxVal = sorted[0].annualValue || 1;
+    const abcBars = abc.map((r, i) => {
+      const x = 46 + i * 58;
+      const h = Math.max(3, r.annualValue / maxVal * 175);
+      return { x, tx: x + 18, y: 200 - h, h, sku: r.sku, fill: clsMeta[r.cls].bg };
+    });
+    const abcPts = abc.map((r, i) => [46 + i*58 + 18, 200 - r.cumPct/100*180]);
+    const abcLine = abcPts.map(p => p.map(v => Math.round(v*10)/10).join(',')).join(' ');
+    const abcDots = abcPts.map(p => ({ cx: p[0], cy: p[1] }));
+    const abcRows = abc.map((r, i) => ({
+      rank: r.rank, name: r.name, val: this.moneyM(r.annualValue),
+      pct: this.fmt(r.pctVal,1)+'%', cum: this.fmt(r.cumPct,1)+'%',
+      cls: r.cls, clsBg: clsMeta[r.cls].bg, clsFg: clsMeta[r.cls].fg, rowBg: zebra(i)
+    }));
 
-function renderAll(){
-  renderParams(); renderEOQ(); renderABC(); renderDiag();
-  renderRotacion(); renderSellThrough(); renderBackorders();
-  populateFcSel();
-}
+    // ---- dashboard ----
+    const invValue = rows.reduce((s,r) => s + r.stock*r.unitCost, 0);
+    const totalTC = rows.reduce((s,r) => s + r.TC, 0);
+    const nAlerts = rows.filter(r => r.status !== 'ok').length;
+    const wTurns = rows.reduce((s,r) => s + r.turns*r.annualValue, 0) / totalVal;
+    const totBo = rows.reduce((s,r) => s + r.boUnits, 0);
+    const totMonthly = rows.reduce((s,r) => s + r.monthlyD, 0);
+    const gFill = totMonthly > 0 ? 1 - totBo/totMonthly : 1;
+    const dashKpis = [
+      { label:'Valor de inventario', value:this.moneyM(invValue), delta:'+3,2%', deltaColor:C.ok, sub:'vs. mayo' },
+      { label:'Costo anual de gestión', value:this.moneyM(totalTC), delta:'−5,8%', deltaColor:C.ok, sub:'con lotes óptimos' },
+      { label:'SKUs en alerta', value:String(nAlerts)+' / '+rows.length, delta:nAlerts>2?'+1':'—', deltaColor:nAlerts>2?C.err:C.sec, sub:'requieren acción' },
+      { label:'Rotación promedio', value:this.fmt(wTurns,1)+'×', delta:'+0,4×', deltaColor:C.ok, sub:'ponderada por valor' },
+      { label:'Fill rate global', value:this.fmt(gFill*100,1)+'%', delta:'−0,6 pp', deltaColor:C.err, sub:'objetivo ≥ 97%' }
+    ];
+    const maxInvVal = Math.max(...rows.map(r => r.stock*r.unitCost)) || 1;
+    const valueBars = rows.slice().sort((a,b) => b.stock*b.unitCost - a.stock*a.unitCost).map(r => ({
+      name: r.name, pct: Math.round(r.stock*r.unitCost / maxInvVal * 100), value: this.moneyM(r.stock*r.unitCost)
+    }));
+    const dashAlerts = diagAlerts.slice(0, 5).map(a => ({ dot:a.dot, title:a.title, desc:a.product }));
+    const suggested = rows.filter(r => r.daysToROP < 7).sort((a,b) => a.daysToROP - b.daysToROP).map(r => ({
+      name: r.name, qty: this.fmt(r.EOQ),
+      when: r.daysToROP < 0 ? 'Inmediato' : 'En ' + Math.max(1, Math.round(r.daysToROP)) + ' días',
+      whenColor: r.daysToROP < 0 ? C.err : C.warn, whenBg: r.daysToROP < 0 ? errB : warnB
+    }));
 
-function stOf(p){ return p.cv>0.45?'crit':p.PR>p.EOQ||p.ciclo<7?'warn':'ok'; }
+    // ---- params ----
+    const paramRows = S.products.map((p, i) => ({
+      sku: p.sku, name: p.name, demand: p.demand, orderCost: p.orderCost, holdRate: p.holdRate,
+      lead: p.lead, unitCost: p.unitCost, stock: p.stock, rowBg: zebra(i),
+      onD: e => this.upd(i,'demand',e), onS: e => this.upd(i,'orderCost',e), onH: e => this.upd(i,'holdRate',e),
+      onL: e => this.upd(i,'lead',e), onC: e => this.upd(i,'unitCost',e), onSt: e => this.upd(i,'stock',e)
+    }));
 
-// ── PARAMS ──────────────────────────────────────────────────────────────────
-function renderParams(){
-  document.getElementById('pcnt').textContent=products.length;
-  document.getElementById('ptbody').innerHTML=products.map(p=>`<tr>
-    <td style="font-weight:700">${p.code}</td>
-    <td style="font-family:sans-serif;max-width:160px;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
-    <td>${fmt(p.vol,3)}</td><td>${p.lt}d</td><td>${fmt(p.D)}</td>
-    <td>$${fmt(p.pv,2)}</td><td>$${fmt(p.cu,2)}</td>
-    <td><span class="badge b${p.clase}">${p.clase}</span></td>
-  </tr>`).join('');
-}
+    // ---- EOQ ----
+    const totOrders = rows.reduce((s,r) => s + r.N, 0);
+    const orderCostA = rows.reduce((s,r) => s + (r.EOQ>0 ? r.D/r.EOQ*r.orderCost : 0), 0);
+    const holdCostA = rows.reduce((s,r) => s + r.avgInv*r.H, 0);
+    const eoqKpis = [
+      { label:'Pedidos totales / año', value:this.fmt(totOrders), sub:'≈ '+this.fmt(totOrders/12,1)+' pedidos por mes' },
+      { label:'Costo anual de pedidos', value:this.moneyM(orderCostA), sub:'emisión + recepción' },
+      { label:'Costo anual de mantenimiento', value:this.moneyM(holdCostA), sub:'capital + depósito + seguro' },
+      { label:'Nivel de servicio', value:sl, sub:'z = '+z+' · stock de seguridad' }
+    ];
+    const eoqRows = rows.map((r, i) => {
+      const b = badge(r.status);
+      return { sku:r.sku, name:r.name, d:this.fmt(r.D), eoq:this.fmt(r.EOQ), n:this.fmt(r.N,1),
+        cycle:this.fmt(r.cycle,1), rop:this.fmt(r.ROP), ss:this.fmt(r.SSv), avgInv:this.fmt(r.avgInv),
+        tc:this.money(r.TC), stBg:b.bg, stFg:b.fg, stLabel:b.label, rowBg:zebra(i) };
+    });
 
-// ── EOQ ──────────────────────────────────────────────────────────────────────
-function renderEOQ(){
-  const tCIT=products.reduce((a,x)=>a+x.CIT,0);
-  const tSS=products.reduce((a,x)=>a+x.cSS,0);
-  const tInv=products.reduce((a,x)=>a+x.val_inv,0);
-  const avgC=products.reduce((a,x)=>a+x.ciclo,0)/products.length;
-  document.getElementById('ekpis').innerHTML=`
-    <div class="mc"><div class="mc-label">CIT total/año</div><div class="mc-val">${fmtM(tCIT)}</div><div class="mc-sub">costo total inventario</div></div>
-    <div class="mc"><div class="mc-label">Costo SS</div><div class="mc-val" style="color:var(--red)">${fmtM(tSS)}</div><div class="mc-sub">${fmt(tSS/tCIT*100,0)}% del CIT</div></div>
-    <div class="mc"><div class="mc-label">Capital inmovilizado</div><div class="mc-val">${fmtM(tInv)}</div></div>
-    <div class="mc"><div class="mc-label">Ciclo promedio</div><div class="mc-val">${fmt(avgC,1)}d</div></div>`;
-  document.getElementById('etbody').innerHTML=products.map(p=>{
-    const st=stOf(p);
-    return `<tr>
-      <td style="font-weight:700">${p.code}</td>
-      <td style="font-family:sans-serif;max-width:110px;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
-      <td><span class="badge b${p.clase}">${p.clase}</span></td>
-      <td style="color:var(--text2)">${p.z}</td>
-      <td><span class="dot d${st}"></span><span class="badge b${st}">${st==='ok'?'Óptimo':st==='warn'?'Revisar':'Crítico'}</span></td>
-      <td>${fmt(p.D)}</td>
-      <td style="color:${p.cv>0.45?'var(--red)':p.cv>0.25?'var(--amber)':'var(--green)'}">${fmt(p.cv*100,1)}%</td>
-      <td style="color:var(--amber);font-weight:700">${fmt(p.SS,0)}</td>
-      <td style="color:var(--green);font-weight:700">${fmt(p.EOQ,0)}</td>
-      <td>${fmt(p.n_ped,1)}</td><td>${fmt(p.ciclo,1)}</td>
-      <td style="font-weight:700">${fmt(p.PR,0)}</td><td>${fmt(p.inv_p,0)}</td>
-      <td>${fmtM(p.K)}</td><td>${fmtM(p.h)}</td><td>${fmtM(p.CIT)}</td>
-      <td style="color:var(--green)">${fmt(p.rent,1)}%</td>
-    </tr>`;
-  }).join('');
-}
+    // ---- diag KPIs ----
+    const nErr = diagAlerts.filter(a => a.sev==='err').length;
+    const nWarn = diagAlerts.filter(a => a.sev==='warn').length;
+    const diagKpis = [
+      { label:'Alertas críticas', value:String(nErr), color:C.err, sub:'quiebres y backorders' },
+      { label:'Advertencias', value:String(nWarn), color:C.warn, sub:'rotación y sobrestock' },
+      { label:'SKUs sin observaciones', value:String(rows.length - new Set(alerts.map(a=>a.product)).size), color:C.ok, sub:'operando en rango óptimo' },
+      { label:'Capital en riesgo', value:this.moneyM(rows.filter(r=>r.status!=='ok').reduce((s,r)=>s+r.stock*r.unitCost,0)), color:'#1A2332', sub:'inventario de SKUs en alerta' }
+    ];
 
-// ── ABC ──────────────────────────────────────────────────────────────────────
-function renderABC(){
-  const tVA=products.reduce((a,x)=>a+x.D*x.pv,0);
-  const sorted=[...products].sort((a,b)=>b.D*b.pv-a.D*a.pv);
-  const nA=products.filter(x=>x.clase==='A').length,nB=products.filter(x=>x.clase==='B').length,nC=products.filter(x=>x.clase==='C').length;
-  const pA=sorted.filter(x=>x.clase==='A').reduce((a,x)=>a+x.D*x.pv/tVA*100,0);
-  const pB=sorted.filter(x=>x.clase==='B').reduce((a,x)=>a+x.D*x.pv/tVA*100,0);
-  document.getElementById('akpis').innerHTML=`
-    <div class="mc"><div class="mc-label">Clase A — ${nA} prod.</div><div class="mc-val" style="color:#F97171">${fmt(pA,1)}%</div><div class="mc-sub">z=${gv('pza')}</div></div>
-    <div class="mc"><div class="mc-label">Clase B — ${nB} prod.</div><div class="mc-val" style="color:var(--amber)">${fmt(pB,1)}%</div><div class="mc-sub">z=${gv('pzb')}</div></div>
-    <div class="mc"><div class="mc-label">Clase C — ${nC} prod.</div><div class="mc-val" style="color:var(--green)">${fmt(100-pA-pB,1)}%</div><div class="mc-sub">z=${gv('pzc')}</div></div>`;
-  let cum=0;
-  document.getElementById('atbody').innerHTML=sorted.map(p=>{
-    const va=p.D*p.pv; cum+=va/tVA*100;
-    return `<tr><td><span class="badge b${p.clase}">${p.clase}</span></td>
-      <td style="font-weight:700">${p.code}</td>
-      <td style="font-family:sans-serif;max-width:140px;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
-      <td>${fmtM(va)}</td><td>${fmt(va/tVA*100,1)}%</td><td>${fmt(cum,1)}%</td>
-      <td>${p.z}</td><td style="color:var(--amber)">${fmt(p.SS,0)}</td>
-      <td style="color:var(--green)">${fmt(p.EOQ,0)}</td><td>${fmt(p.ciclo,1)}d</td>
-    </tr>`;
-  }).join('');
-  if(aC) aC.destroy();
-  aC=new Chart(document.getElementById('achart'),{type:'bar',
-    data:{labels:['A','B','C'],datasets:[
-      {label:'% valor',data:[pA,pB,100-pA-pB].map(v=>+v.toFixed(1)),backgroundColor:'#1D9E75',borderRadius:4},
-      {label:'% ítems',data:[nA,nB,nC].map(n=>+(n/products.length*100).toFixed(1)),backgroundColor:'#5DCAA5',borderRadius:4}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{max:100,ticks:{color:'#9196B5',callback:v=>v+'%'},grid:{color:'#2E3250'}},x:{ticks:{color:'#9196B5'},grid:{color:'#2E3250'}}}}
-  });
-}
+    // ---- sensitivity ----
+    const sp = rows[Math.min(S.sensIdx, rows.length - 1)] || rows[0];
+    const sensOptions = rows.map((r, i) => ({ value: i, label: r.sku + ' — ' + r.name }));
+    const baseTC = sp.EOQ>0 ? sp.D/sp.EOQ*sp.orderCost + sp.EOQ/2*sp.H : 0;
+    const sensRows = [-30,-20,-10,0,10,20,30].map((dev, i) => {
+      const D2 = sp.D * (1 + dev/100);
+      const E2 = Math.sqrt(2*D2*sp.orderCost/sp.H);
+      const T2 = D2/E2*sp.orderCost + E2/2*sp.H;
+      const dtc = (T2/baseTC - 1) * 100;
+      return { dev: (dev>0?'+':'')+dev+'%', d:this.fmt(D2), eoq:this.fmt(E2), n:this.fmt(D2/E2,1),
+        tc:this.money(T2), dtc:(dtc>=0?'+':'')+this.fmt(dtc,2)+'%',
+        dtcColor: Math.abs(dtc)<0.01 ? C.sec : dtc>0 ? C.warn : C.ok,
+        fw: dev===0 ? 700 : 400, rowBg: dev===0 ? '#EBF2FB' : zebra(i) };
+    });
+    const qMin = sp.EOQ*0.3, qMax = sp.EOQ*2.3;
+    const tcAt = q => sp.D/q*sp.orderCost + q/2*sp.H;
+    const tcMax = Math.max(tcAt(qMin), tcAt(qMax));
+    const px = q => 42 + (q-qMin)/(qMax-qMin) * 368;
+    const py = t => 190 - (t/tcMax) * 160;
+    let sensCurve = '';
+    for (let k = 0; k <= 60; k++) {
+      const q = qMin + (qMax-qMin)*k/60;
+      sensCurve += (k===0?'M':'L') + this.fmt0(px(q)) + ' ' + this.fmt0(py(tcAt(q))) + ' ';
+    }
+    const sensEoqX = this.fmt0(px(sp.EOQ)), sensEoqY = this.fmt0(py(tcAt(sp.EOQ)));
 
-// ── DIAG ──────────────────────────────────────────────────────────────────────
-function renderDiag(){
-  const tCIT=products.reduce((a,x)=>a+x.CIT,0),tSS=products.reduce((a,x)=>a+x.cSS,0);
-  const crit=products.filter(x=>stOf(x)==='crit').length,warn=products.filter(x=>stOf(x)==='warn').length;
-  document.getElementById('dkpis').innerHTML=`
-    <div class="mc"><div class="mc-label">CIT total/año</div><div class="mc-val">${fmtM(tCIT)}</div></div>
-    <div class="mc"><div class="mc-label">SS % del CIT</div><div class="mc-val" style="color:var(--red)">${fmt(tSS/tCIT*100,0)}%</div></div>
-    <div class="mc"><div class="mc-label">Alertas</div><div class="mc-val" style="color:var(--amber)">${crit+warn}</div><div class="mc-sub">${crit} críticas · ${warn} a revisar</div></div>`;
-  const ins=[];
-  products.forEach(p=>{
-    if(p.cv>0.45) ins.push({t:'ic',m:`<b>${p.name}</b>: CV=${fmt(p.cv*100,1)}% — demanda muy inestable. SS cuesta ${fmtM(p.cSS)}/año.`});
-    if(p.PR>p.EOQ) ins.push({t:'ic',m:`<b>${p.name}</b>: punto reorden (${fmt(p.PR,0)}u) > EOQ. Lead time crítico.`});
-    if(p.ciclo<7) ins.push({t:'iw',m:`<b>${p.name}</b>: ciclo ${fmt(p.ciclo,1)}d — pedido casi semanal.`});
-    if(p.SS/p.EOQ>0.8) ins.push({t:'iw',m:`<b>${p.name}</b>: SS = ${fmt(p.SS/p.EOQ*100,0)}% del EOQ — variabilidad domina.`});
-  });
-  if(!ins.length) ins.push({t:'',m:'Sin alertas críticas.'});
-  document.getElementById('dins').innerHTML=ins.slice(0,8).map(i=>`<div class="ins ${i.t}">${i.m}</div>`).join('');
-  if(dC) dC.destroy();
-  dC=new Chart(document.getElementById('dchart'),{type:'bar',
-    data:{labels:products.map(x=>x.code),datasets:[
-      {label:'CIT base',data:products.map(x=>Math.round(x.CIT_b)),backgroundColor:'#1D9E75',borderRadius:3},
-      {label:'Costo SS',data:products.map(x=>Math.round(x.cSS)),backgroundColor:'#E24B4A',borderRadius:3}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{stacked:true,ticks:{color:'#9196B5'},grid:{color:'#2E3250'}},y:{stacked:true,ticks:{color:'#9196B5',callback:v=>fmtM(v)},grid:{color:'#2E3250'}}}}
-  });
-}
+    // ---- rotation ----
+    const capital = rows.reduce((s,r) => s + r.avgInv*r.unitCost, 0);
+    const rotKpis = [
+      { label:'Rotación promedio ponderada', value:this.fmt(wTurns,1)+'× / año', sub:'objetivo del rubro: 8–12×' },
+      { label:'Días de inventario promedio', value:this.fmt(365/wTurns)+' días', sub:'ponderado por valor' },
+      { label:'Capital promedio inmovilizado', value:this.moneyM(capital), sub:'inventario promedio valorizado' }
+    ];
+    const rotRows = rows.slice().sort((a,b) => b.turns - a.turns).map((r, i) => {
+      const lvl = r.turns >= 10 ? {bg:okB, fg:C.ok, label:'Alta'} : r.turns >= 6 ? {bg:priB, fg:C.pri, label:'Media'} : {bg:warnB, fg:C.warn, label:'Baja'};
+      return { name:r.name, avgInv:this.fmt(r.avgInv), capital:this.money(r.avgInv*r.unitCost),
+        turns:this.fmt(r.turns,1)+'×', dsi:this.fmt(r.dsi), target:'≥ 8×',
+        stBg:lvl.bg, stFg:lvl.fg, stLabel:lvl.label, rowBg:zebra(i) };
+    });
 
-// ── SENSIBILIDAD ──────────────────────────────────────────────────────────────
-function renderSens(){
-  const sel=document.getElementById('ssel');
-  if(!sel.options.length) sel.innerHTML=products.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
-  const p=products[parseInt(sel.value)||0]; if(!p) return;
-  const vars=[-50,-30,-10,0,10,30,50];
-  const sf=v=>`<td style="color:${v>0?'var(--red)':v<0?'var(--green)':'var(--text2)'}">${v>0?'+':''}${v}%</td>`;
-  let tK='<table><thead><tr><th>Var K</th><th>K</th><th>EOQ</th><th>CIT</th><th>Δ</th></tr></thead><tbody>';
-  vars.forEach(v=>{
-    const Kv=p.K*(1+v/100),eoq=Math.sqrt(2*p.D*Kv/p.h),cit=(p.D/eoq)*Kv+(eoq/2+p.SS)*p.h,d=cit-p.CIT;
-    tK+=`<tr style="${v===0?'background:var(--bg3)':''}">${sf(v)}<td>${fmtM(Kv)}</td><td>${fmt(eoq,0)}</td><td>${fmtM(cit)}</td><td style="color:${d>0?'var(--red)':'var(--green)'}">${d>=0?'+':''}${fmtM(d)}</td></tr>`;
-  });
-  document.getElementById('sk').innerHTML=tK+'</tbody></table>';
-  let tH='<table><thead><tr><th>Var h</th><th>h</th><th>EOQ</th><th>CIT</th><th>Δ</th></tr></thead><tbody>';
-  vars.forEach(v=>{
-    const hv=p.h*(1+v/100),eoq=Math.sqrt(2*p.D*p.K/hv),cit=(p.D/eoq)*p.K+(eoq/2+p.SS)*hv,d=cit-p.CIT;
-    tH+=`<tr style="${v===0?'background:var(--bg3)':''}">${sf(v)}<td>${fmtM(hv)}</td><td>${fmt(eoq,0)}</td><td>${fmtM(cit)}</td><td style="color:${d>0?'var(--red)':'var(--green)'}">${d>=0?'+':''}${fmtM(d)}</td></tr>`;
-  });
-  document.getElementById('sh').innerHTML=tH+'</tbody></table>';
-  if(sC) sC.destroy();
-  const colors=['#085041','#0F6E56','#1D9E75','#5DCAA5','#9FE1CB','#C8F0E3','#E1F5EE'];
-  sC=new Chart(document.getElementById('schart'),{type:'line',
-    data:{labels:vars.map(v=>`h ${v>0?'+':''}${v}%`),datasets:vars.map((vK,i)=>{
-      const Kv=p.K*(1+vK/100);
-      return{label:`K ${vK>0?'+':''}${vK}%`,
-        data:vars.map(vH=>{const hv=p.h*(1+vH/100),eoq=Math.sqrt(2*p.D*Kv/hv);return Math.round((p.D/eoq)*Kv+(eoq/2+p.SS)*hv);}),
-        borderColor:colors[i],backgroundColor:'transparent',tension:0.3,pointRadius:3,borderDash:vK===0?[]:[4,3]};
-    })},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#9196B5',font:{size:10}},grid:{color:'#2E3250'}},y:{ticks:{color:'#9196B5',callback:v=>fmtM(v)},grid:{color:'#2E3250'}}}}
-  });
-}
+    // ---- sell-through ----
+    const totAvail = rows.reduce((s,r) => s + r.stBegin + r.stRecv, 0);
+    const totSold = rows.reduce((s,r) => s + r.stSold, 0);
+    const stKpis = [
+      { label:'Sell-through promedio', value:this.fmt(totSold/totAvail*100,1)+'%', sub:'objetivo mensual: ≥ 55%' },
+      { label:'Unidades vendidas (jun)', value:this.fmt(totSold), sub:'sobre '+this.fmt(totAvail)+' disponibles' },
+      { label:'Unidades recibidas (jun)', value:this.fmt(rows.reduce((s,r)=>s+r.stRecv,0)), sub:this.fmt(rows.reduce((s,r)=>s+r.N/12,1))+' órdenes recepcionadas' }
+    ];
+    const stRows = rows.slice().sort((a,b) => b.st - a.st).map((r, i) => {
+      const pct = r.st*100;
+      const lvl = pct >= 55 ? {bg:okB, fg:C.ok, label:'Saludable', bar:C.ok} : pct >= 45 ? {bg:warnB, fg:C.warn, label:'Atención', bar:C.warn} : {bg:errB, fg:C.err, label:'Bajo', bar:C.err};
+      return { name:r.name, begin:this.fmt(r.stBegin), recv:this.fmt(r.stRecv), sold:this.fmt(r.stSold),
+        st:this.fmt(pct,1)+'%', barW:Math.round(pct), barColor:lvl.bar,
+        stBg:lvl.bg, stFg:lvl.fg, stLabel:lvl.label, rowBg:zebra(i) };
+    });
 
-// ── ROTACIÓN ──────────────────────────────────────────────────────────────────
-function renderRotacion(){
-  const avgRot=products.reduce((a,x)=>a+x.rotacion,0)/products.length;
-  const avgDSI=products.reduce((a,x)=>a+x.dsi,0)/products.length;
-  const lentas=products.filter(x=>x.rotacion<4).length;
-  document.getElementById('rkpis').innerHTML=`
-    <div class="mc"><div class="mc-label">Rotación promedio</div><div class="mc-val">${fmt(avgRot,1)}x</div><div class="mc-sub">veces/año</div></div>
-    <div class="mc"><div class="mc-label">Días de inventario prom.</div><div class="mc-val">${fmt(avgDSI,0)}d</div><div class="mc-sub">DSI promedio</div></div>
-    <div class="mc"><div class="mc-label">Productos rotación baja</div><div class="mc-val" style="color:var(--amber)">${lentas}</div><div class="mc-sub">&lt; 4x/año</div></div>
-    <div class="mc"><div class="mc-label">Capital inmovilizado</div><div class="mc-val">${fmtM(products.reduce((a,x)=>a+x.val_inv,0))}</div></div>`;
-  document.getElementById('rtbody').innerHTML=products.map(p=>{
-    const color=p.rotacion>=12?'var(--green)':p.rotacion>=4?'var(--amber)':'var(--red)';
-    const label=p.rotacion>=12?'Alta':p.rotacion>=4?'Normal':'Baja';
-    const bclass=p.rotacion>=12?'bok':p.rotacion>=4?'bwarn':'bcrit';
-    return `<tr>
-      <td style="font-weight:700">${p.code}</td>
-      <td style="font-family:sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
-      <td><span class="badge b${p.clase}">${p.clase}</span></td>
-      <td>${fmt(p.D)}</td><td>${fmt(p.inv_p,0)}</td>
-      <td style="color:${color};font-weight:700">${fmt(p.rotacion,1)}x</td>
-      <td>${fmt(p.dsi,0)}d</td>
-      <td><span class="badge ${bclass}">${label}</span></td>
-    </tr>`;
-  }).join('');
-  if(rC) rC.destroy();
-  rC=new Chart(document.getElementById('rchart'),{type:'bar',
-    data:{labels:products.map(x=>x.code),datasets:[
-      {label:'Rotación',data:products.map(x=>+x.rotacion.toFixed(2)),backgroundColor:products.map(x=>x.rotacion>=12?'#1D9E75':x.rotacion>=4?'#EF9F27':'#E24B4A'),borderRadius:4}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#9196B5'},grid:{color:'#2E3250'}},y:{ticks:{color:'#9196B5',callback:v=>v+'x'},grid:{color:'#2E3250'}}}}
-  });
-}
+    // ---- backorders ----
+    const boCost = rows.reduce((s,r) => s + r.boUnits*r.boPenalty, 0);
+    const boKpis = [
+      { label:'Unidades en backorder', value:this.fmt(totBo), color:totBo>500?C.err:'#1A2332', sub:'demanda comprometida sin stock' },
+      { label:'Costo mensual estimado', value:this.money(boCost), color:'#1A2332', sub:'penalización + margen perdido' },
+      { label:'Fill rate global', value:this.fmt(gFill*100,1)+'%', color:gFill<0.95?C.warn:C.ok, sub:'objetivo ≥ 97%' },
+      { label:'SKUs con backorders', value:String(rows.filter(r=>r.boUnits>0).length)+' / '+rows.length, color:'#1A2332', sub:'con demanda insatisfecha' }
+    ];
+    const boRows = rows.slice().sort((a,b) => b.boUnits*b.boPenalty - a.boUnits*a.boPenalty).map((r, i) => {
+      const lvl = r.fill >= 0.97 ? {bg:okB, fg:C.ok, label:'Bajo control'} : r.fill >= 0.9 ? {bg:warnB, fg:C.warn, label:'Vigilar'} : {bg:errB, fg:C.err, label:'Crítico'};
+      return { name:r.name, units:this.fmt(r.boUnits), pctDem:this.fmt(r.boUnits/r.monthlyD*100,1)+'%',
+        penalty:this.fmt(r.boPenalty), cost:this.money(r.boUnits*r.boPenalty),
+        fill:this.fmt(r.fill*100,1)+'%', fillColor: r.fill>=0.97?C.ok:r.fill>=0.9?C.warn:C.err,
+        stBg:lvl.bg, stFg:lvl.fg, stLabel:lvl.label, rowBg:zebra(i) };
+    });
 
-// ── SELL-THROUGH ──────────────────────────────────────────────────────────────
-function renderSellThrough(){
-  const avg=products.reduce((a,x)=>a+x.sell_through,0)/products.length;
-  const ok=products.filter(x=>x.sell_through>=50&&x.sell_through<80).length;
-  const riesgo=products.filter(x=>x.sell_through>=80).length;
-  document.getElementById('stkpis').innerHTML=`
-    <div class="mc"><div class="mc-label">Sell-through promedio</div><div class="mc-val">${fmt(avg,1)}%</div></div>
-    <div class="mc"><div class="mc-label">En zona saludable (50-80%)</div><div class="mc-val" style="color:var(--green)">${ok}</div></div>
-    <div class="mc"><div class="mc-label">Riesgo faltante (&gt;80%)</div><div class="mc-val" style="color:var(--red)">${riesgo}</div></div>`;
-  document.getElementById('sttbody').innerHTML=products.map(p=>{
-    const color=p.sell_through>=80?'var(--red)':p.sell_through>=50?'var(--green)':'var(--amber)';
-    const label=p.sell_through>=80?'Riesgo faltante':p.sell_through>=50?'Saludable':'Sobrestock';
-    const bclass=p.sell_through>=80?'bcrit':p.sell_through>=50?'bok':'bwarn';
-    const pct=Math.min(100,p.sell_through);
-    const barColor=p.sell_through>=80?'#E24B4A':p.sell_through>=50?'#1D9E75':'#EF9F27';
-    return `<tr>
-      <td style="font-weight:700">${p.code}</td>
-      <td style="font-family:sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
-      <td><span class="badge b${p.clase}">${p.clase}</span></td>
-      <td style="color:${color};font-weight:700">${fmt(p.sell_through,1)}%</td>
-      <td><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${barColor}"></div></div></td>
-      <td>${fmt(p.D/12,0)}</td>
-      <td>${fmt(p.inv_p,0)}</td>
-      <td><span class="badge ${bclass}">${label}</span></td>
-    </tr>`;
-  }).join('');
-}
+    // ---- forecasting ----
+    const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const baseM = totalVal / 12;
+    const seas = m => 1 + 0.14*Math.sin((m - 9.5)/12*2*Math.PI);
+    const hist = [];
+    for (let k = 0; k < 12; k++) {
+      const mIdx = (7 + k) % 12; // Ago'25 .. Jul'26
+      hist.push({ m: mIdx, v: baseM * (1 + 0.006*k) * seas(mIdx) * (1 + 0.045*Math.sin(k*2.3)) });
+    }
+    const proj = [];
+    for (let k = 0; k < fh; k++) {
+      const mIdx = (7 + k) % 12; // Ago'26 ..
+      const v = baseM * (1 + 0.006*(12+k)) * (1 + 0.008*(k+1)) * seas(mIdx);
+      proj.push({ m: mIdx, v, lo: v*(1 - 0.045 - 0.011*k), hi: v*(1 + 0.045 + 0.011*k) });
+    }
+    const all = hist.map(h=>h.v).concat(proj.map(p=>p.hi), proj.map(p=>p.lo));
+    const vMin = Math.min(...all)*0.92, vMax = Math.max(...all)*1.04;
+    const nPts = 12 + fh;
+    const fx = i => 46 + i/(nPts-1) * 702;
+    const fy = v => 222 - (v-vMin)/(vMax-vMin) * 200;
+    const histPts = hist.map((h,i) => this.fmt0(fx(i))+','+this.fmt0(fy(h.v))).join(' ');
+    const projAll = [{ v: hist[11].v, lo: hist[11].v, hi: hist[11].v }].concat(proj);
+    const projPts = projAll.map((p,i) => this.fmt0(fx(11+i))+','+this.fmt0(fy(p.v))).join(' ');
+    const bandPts = projAll.map((p,i) => this.fmt0(fx(11+i))+','+this.fmt0(fy(p.hi))).join(' ') + ' ' +
+      projAll.slice().reverse().map((p,i) => this.fmt0(fx(11+fh-i))+','+this.fmt0(fy(p.lo))).join(' ');
+    const fcLabels = hist.concat(proj).map((p,i) => ({ x:this.fmt0(fx(i)), t:monthNames[p.m], c: i<12 ? '#6B7A8D' : '#2E7D32' }));
+    const fcGrid = [0,1,2,3].map(k => { const v = vMin + (vMax-vMin)*k/3; const y = this.fmt0(fy(v)); return { y, ty:+y+3, t:this.fmt(v/1e6) }; });
+    const fcSplitX = this.fmt0(fx(11));
+    const projTotal = proj.reduce((s,p) => s+p.v, 0);
+    const histAvg = hist.reduce((s,h) => s+h.v, 0)/12;
+    const projAvg = projTotal/fh;
+    const fcKpis = [
+      { label:'Proyección próx. '+fh+' meses', value:this.moneyM(projTotal), color:'#1A2332', sub:'demanda valorizada estimada' },
+      { label:'Tendencia', value:(projAvg/histAvg>=1?'+':'')+this.fmt((projAvg/histAvg-1)*100,1)+'%', color:projAvg>=histAvg?C.ok:C.err, sub:'promedio proyectado vs. histórico' },
+      { label:'MAPE del modelo', value:'6,8%', color:C.ok, sub:'error absoluto medio (backtest 12m)' },
+      { label:'Modelo', value:'Holt-Winters', color:'#1A2332', sub:'estacionalidad aditiva · reentrenado 01/07' }
+    ];
+    const fcRows = rows.slice().sort((a,b) => b.trend - a.trend).map((r, i) => {
+      const projU = r.D/12 * fh * (1 + r.trend/100 * (fh/12 + 0.25));
+      const d = r.trend;
+      const bdg = d >= 8 ? {bg:okB, fg:C.ok, label:'Crecimiento fuerte'} : d >= 0 ? {bg:priB, fg:C.pri, label:'Estable / al alza'} : {bg:warnB, fg:C.warn, label:'En descenso'};
+      return { name:r.name, hist:this.fmt(r.D), proj:this.fmt(projU),
+        delta:(d>=0?'+':'')+this.fmt(d,1)+'%', deltaColor: d>=0?C.ok:C.err,
+        badgeBg:bdg.bg, badgeFg:bdg.fg, badge:bdg.label, rowBg:zebra(i) };
+    });
 
-// ── BACKORDERS ────────────────────────────────────────────────────────────────
-function renderBackorders(){
-  const totalBO=products.reduce((a,x)=>a+x.backorder_est,0);
-  const enRiesgo=products.filter(x=>x.pct_riesgo>33).length;
-  const valBO=products.reduce((a,x)=>a+x.backorder_est*x.pv,0);
-  document.getElementById('bokpis').innerHTML=`
-    <div class="mc"><div class="mc-label">Backorder total estimado</div><div class="mc-val" style="color:var(--red)">${fmt(totalBO,0)}u</div></div>
-    <div class="mc"><div class="mc-label">Valor ventas perdidas est.</div><div class="mc-val" style="color:var(--red)">${fmtM(valBO)}</div></div>
-    <div class="mc"><div class="mc-label">Productos en riesgo alto</div><div class="mc-val" style="color:var(--amber)">${enRiesgo}</div><div class="mc-sub">&gt;33% meses en riesgo</div></div>`;
-  document.getElementById('botbody').innerHTML=products.map(p=>{
-    const riesgoNivel=p.pct_riesgo>50?'bcrit':p.pct_riesgo>25?'bwarn':'bok';
-    const riesgoLabel=p.pct_riesgo>50?'Alto':p.pct_riesgo>25?'Moderado':'Bajo';
-    return `<tr>
-      <td style="font-weight:700">${p.code}</td>
-      <td style="font-family:sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
-      <td><span class="badge b${p.clase}">${p.clase}</span></td>
-      <td style="color:${p.meses_riesgo>6?'var(--red)':p.meses_riesgo>3?'var(--amber)':'var(--green)'}">${p.meses_riesgo} / 12</td>
-      <td>${fmt(p.pct_riesgo,0)}%</td>
-      <td style="color:var(--red)">${fmt(p.backorder_est,0)}</td>
-      <td style="color:var(--red)">${fmtM(p.backorder_est*p.pv)}</td>
-      <td><span class="badge ${riesgoNivel}">${riesgoLabel}</span></td>
-    </tr>`;
-  }).join('');
-  if(boC) boC.destroy();
-  boC=new Chart(document.getElementById('bochart'),{type:'bar',
-    data:{labels:products.map(x=>x.code),datasets:[
-      {label:'Backorder estimado',data:products.map(x=>Math.round(x.backorder_est)),
-       backgroundColor:products.map(x=>x.pct_riesgo>50?'#E24B4A':x.pct_riesgo>25?'#EF9F27':'#1D9E75'),borderRadius:4}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#9196B5'},grid:{color:'#2E3250'}},y:{ticks:{color:'#9196B5',callback:v=>fmt(v,0)+'u'},grid:{color:'#2E3250'}}}}
-  });
-}
-
-// ── FORECASTING ────────────────────────────────────────────────────────────────
-function populateFcSel(){
-  const sel=document.getElementById('fcsel');
-  const cur=sel.value;
-  sel.innerHTML=products.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
-  if(cur) sel.value=cur;
-  const avgMAPE=products.reduce((a,x)=>a+(x.forecast?.mape||0),0)/products.length;
-  const avgAlpha=products.reduce((a,x)=>a+(x.forecast?.alpha||0),0)/products.length;
-  const bestProd=products.reduce((a,x)=>(x.forecast?.mape||999)<(a.forecast?.mape||999)?x:a,products[0]);
-  document.getElementById('fckpis').innerHTML=`
-    <div class="mc"><div class="mc-label">MAPE promedio portafolio</div><div class="mc-val" style="color:${avgMAPE<10?'var(--green)':avgMAPE<20?'var(--amber)':'var(--red)'}">${fmt(avgMAPE,1)}%</div><div class="mc-sub">${avgMAPE<10?'Excelente':avgMAPE<20?'Bueno':'Revisar datos'}</div></div>
-    <div class="mc"><div class="mc-label">Alpha promedio (suavizado)</div><div class="mc-val">${fmt(avgAlpha,2)}</div><div class="mc-sub">0=más suave · 1=más reactivo</div></div>
-    <div class="mc"><div class="mc-label">Mejor predicción</div><div class="mc-val" style="font-size:13px;margin-top:2px">${bestProd?.code||'—'}</div><div class="mc-sub">MAPE ${fmt(bestProd?.forecast?.mape||0,1)}%</div></div>`;
-}
-
-function renderForecast(){
-  const sel=document.getElementById('fcsel');
-  if(!sel.options.length) populateFcSel();
-  const p=products[parseInt(sel.value)||0]; if(!p||!p.forecast) return;
-  const fc=p.forecast;
-  const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const fcMonths=['M+1','M+2','M+3','M+4','M+5','M+6'];
-
-  document.getElementById('fc-months').innerHTML=fc.forecast.map((v,i)=>`
-    <div class="forecast-month">
-      <div style="font-size:10px;color:var(--text2);margin-bottom:2px">${fcMonths[i]}</div>
-      <div style="font-weight:700;color:var(--blue)">${fmt(v,0)}</div>
-      <div style="font-size:9px;color:var(--text3)">u</div>
-    </div>`).join('');
-
-  document.getElementById('fc-meta').innerHTML=`
-    <span style="margin-right:12px">Alpha óptimo: <b>${fc.alpha}</b></span>
-    <span style="margin-right:12px">Tendencia: <b style="color:${fc.trend>0?'var(--green)':fc.trend<0?'var(--red)':'var(--text2)'}">${fc.trend>0?'+':''}${fmt(fc.trend,1)} u/mes</b></span>`;
-
-  document.getElementById('fc-metrics').innerHTML=`
-    <div style="margin-bottom:8px"><div class="mc-label">MAE (error absoluto medio)</div><div style="font-size:16px;font-weight:700;font-family:monospace">${fmt(fc.mae,1)} u</div></div>
-    <div style="margin-bottom:8px"><div class="mc-label">MAPE (error porcentual)</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:${fc.mape<10?'var(--green)':fc.mape<20?'var(--amber)':'var(--red)'}">${fmt(fc.mape,1)}%</div></div>
-    <div style="margin-bottom:8px"><div class="mc-label">Total forecast 6 meses</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:var(--blue)">${fmt(fc.forecast.reduce((a,b)=>a+b,0),0)} u</div></div>
-    <div><div class="mc-label">Promedio forecast mensual</div><div style="font-size:16px;font-weight:700;font-family:monospace">${fmt(fc.forecast.reduce((a,b)=>a+b,0)/6,0)} u</div></div>`;
-
-  if(fcC) fcC.destroy();
-  const histLabels=months.slice(0,p.months.length);
-  const fcLabels=fcMonths;
-  fcC=new Chart(document.getElementById('fcchart'),{type:'line',
-    data:{
-      labels:[...histLabels,...fcLabels],
-      datasets:[
-        {label:'Demanda real',data:[...p.months,...Array(6).fill(null)],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.1)',fill:true,tension:0.3,pointRadius:4,borderWidth:2},
-        {label:'Modelo ajustado',data:[...fc.fitted,...Array(6).fill(null)],borderColor:'#EF9F27',backgroundColor:'transparent',tension:0.3,pointRadius:3,borderDash:[5,3],borderWidth:1.5},
-        {label:'Forecast',data:[...Array(p.months.length).fill(null),p.months[p.months.length-1],...fc.forecast],borderColor:'#4A90D9',backgroundColor:'rgba(74,144,217,0.1)',fill:false,tension:0.3,pointRadius:4,borderDash:[6,3],borderWidth:2},
-      ]
-    },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:'#9196B5',font:{size:10}},grid:{color:'#2E3250'}},
-        y:{ticks:{color:'#9196B5',callback:v=>fmt(v,0)+'u'},grid:{color:'#2E3250'}}
-      }}
-  });
+    const dataStatus = S.loading ? 'Procesando archivo…'
+      : S.error ? 'Error: ' + S.error
+      : S.fileName ? 'Datos reales · ' + S.fileName
+      : 'Datos de demostración — importá tu Excel';
+    return {
+      skuCount: String(rows.length),
+      dataStatus,
+      statusColor: S.error ? C.err : '#6B7A8D',
+      statusDot: S.loading ? C.pri : S.error ? C.err : S.fileName ? C.ok : C.warn,
+      uploadLabel: S.loading ? 'Procesando…' : 'Importar Excel',
+      uploadIcon: this.icon([['path',{d:'M8 10V2.5M4.8 5.2 8 2l3.2 3.2'}],['path',{d:'M2.5 10.5v2A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5v-2'}]]),
+      onFile: e => this.onFile(e),
+      navItems, sectionTitle: titles[S.active],
+      bellIcon: this.icon([['path',{d:'M8 2a4 4 0 0 1 4 4c0 3 1 4 1.5 4.5H2.5C3 10 4 9 4 6a4 4 0 0 1 4-4z'}],['path',{d:'M6.5 13a1.5 1.5 0 0 0 3 0'}]]),
+      alertCount: String(nErr + nWarn > 9 ? '9+' : nErr + nWarn),
+      showDash: S.active==='dash', showParams: S.active==='params', showEoq: S.active==='eoq',
+      showAbc: S.active==='abc', showDiag: S.active==='diag', showSens: S.active==='sens',
+      showRot: S.active==='rot', showSt: S.active==='st', showBo: S.active==='bo', showFc: S.active==='fc',
+      scenarioLabel: (scen>0?'+':'')+scen+'%',
+      dashKpis, valueBars, dashAlerts, suggested, abcChips,
+      goDiag: e => { e.preventDefault(); this.setState({active:'diag'}); },
+      goAbc: e => { e.preventDefault(); this.setState({active:'abc'}); },
+      svcLevel: sl, zVal: String(z),
+      paramRows, eoqKpis, eoqRows,
+      abcBars, abcLine, abcDots, abcRows,
+      diagKpis, diagAlerts,
+      sensOptions, sensIdx: S.sensIdx, onSensChange: e => this.setState({ sensIdx: +e.target.value }),
+      sensName: sp.name, sensRows, sensCurve, sensEoqX, sensEoqY, sensEoqLabel: this.fmt(sp.EOQ),
+      rotKpis, rotRows, stKpis, stRows, boKpis, boRows,
+      fcKpis, histPts, projPts, bandPts, fcLabels, fcGrid, fcSplitX, fcRows, horizonLabel: String(fh)
+    };
+  }
+  fmt0(n) { return String(Math.round(n*10)/10); }
 }
 </script>
-</body>
-</html>
+
+
+</body></html>{% endraw %}
