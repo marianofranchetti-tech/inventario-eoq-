@@ -285,9 +285,9 @@ window.__resources = {
   <!-- ============ SIDEBAR ============ -->
   <div style="width:228px;flex-shrink:0;background:#FFFFFF;border-right:1px solid #E1E5EB;display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #E1E5EB">
-      <div style="width:32px;height:32px;border-radius:7px;background:#1565C0;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">DM</div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#1565C0;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">EOQ</div>
       <div>
-        <div style="font-weight:700;font-size:13px;line-height:1.2">DIMACO S.A.</div>
+        <div style="font-weight:700;font-size:13px;line-height:1.2">EOQ Suite</div>
         <div style="font-size:10.5px;color:#6B7A8D">Gestión de Inventarios</div>
       </div>
     </div>
@@ -300,7 +300,7 @@ window.__resources = {
       </sc-for>
     </div>
     <div style="padding:12px 16px;border-top:1px solid #E1E5EB;font-size:11px;color:#6B7A8D">
-      EOQ Suite v4.2 · Período FY26
+      EOQ Suite
     </div>
   </div>
 
@@ -310,7 +310,7 @@ window.__resources = {
     <!-- HEADER -->
     <div style="height:54px;flex-shrink:0;background:#FFFFFF;border-bottom:1px solid #E1E5EB;display:flex;align-items:center;padding:0 20px;gap:16px">
       <div style="font-weight:600;font-size:13.5px">{{ sectionTitle }}</div>
-      <div style="color:#6B7A8D;font-size:12px">Distribuidora de Materiales de Construcción · Depósito Central</div>
+      <div style="color:#6B7A8D;font-size:12px">Análisis de inventarios · Lote económico y reposición</div>
       <div style="flex:1"></div>
       <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:{{ statusColor }};background:#F5F7FA;border:1px solid #E1E5EB;border-radius:6px;padding:5px 10px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
         <span style="width:7px;height:7px;border-radius:50%;background:{{ statusDot }};display:inline-block;flex-shrink:0"></span>
@@ -323,14 +323,6 @@ window.__resources = {
       <div style="position:relative;cursor:pointer;color:#6B7A8D;display:flex" style-hover="color:#1A2332">
         {{ bellIcon }}
         <span style="position:absolute;top:-5px;right:-6px;background:#C62828;color:#fff;font-size:9.5px;font-weight:700;border-radius:8px;padding:1px 5px">{{ alertCount }}</span>
-      </div>
-      <div style="width:1px;height:24px;background:#E1E5EB"></div>
-      <div style="display:flex;align-items:center;gap:9px">
-        <div style="width:30px;height:30px;border-radius:50%;background:#E3ECF7;color:#1565C0;font-weight:700;font-size:11.5px;display:flex;align-items:center;justify-content:center">MG</div>
-        <div>
-          <div style="font-weight:600;font-size:12px;line-height:1.2">María González</div>
-          <div style="font-size:10.5px;color:#6B7A8D">Jefa de Compras</div>
-        </div>
       </div>
     </div>
 
@@ -349,7 +341,7 @@ window.__resources = {
               <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;padding:14px 16px;box-shadow:0 1px 2px rgba(26,35,50,0.05)">
                 <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6B7A8D">{{ k.label }}</div>
                 <div style="font-size:21px;font-weight:700;margin-top:6px;letter-spacing:-0.01em">{{ k.value }}</div>
-                <div style="margin-top:5px;font-size:11.5px;display:flex;gap:6px;align-items:baseline"><span style="font-weight:600;color:{{ k.deltaColor }}">{{ k.delta }}</span><span style="color:#6B7A8D">{{ k.sub }}</span></div>
+                <div style="margin-top:5px;font-size:11.5px;color:#6B7A8D">{{ k.sub }}</div>
               </div>
             </sc-for>
           </div>
@@ -710,7 +702,7 @@ window.__resources = {
         <div data-screen-label="Sell-through rate">
           <div style="margin-bottom:16px">
             <div style="font-size:19px;font-weight:700">Sell-through rate</div>
-            <div style="color:#6B7A8D;margin-top:2px">Unidades vendidas sobre disponibles — período: junio 2026</div>
+            <div style="color:#6B7A8D;margin-top:2px">Unidades vendidas sobre disponibles — último mes del período</div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
             <sc-for list="{{ stKpis }}" as="k" hint-placeholder-count="3">
@@ -799,7 +791,7 @@ window.__resources = {
         <div data-screen-label="Forecasting IA">
           <div style="margin-bottom:16px">
             <div style="font-size:19px;font-weight:700">Forecasting IA</div>
-            <div style="color:#6B7A8D;margin-top:2px">Modelo Holt-Winters con estacionalidad — histórico 12 meses y proyección {{ horizonLabel }} meses</div>
+            <div style="color:#6B7A8D;margin-top:2px">Suavizado exponencial con alpha optimizado — histórico 12 meses y proyección {{ horizonLabel }} meses</div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
             <sc-for list="{{ fcKpis }}" as="k" hint-placeholder-count="4">
@@ -913,6 +905,9 @@ class Component extends DCLogic {
       boPenalty: Math.max(50, Math.round((p.cu || 0) * 0.08)),
       trend: Math.round(trendPct * 10) / 10,
       cv: p.cv > 0 ? p.cv : null,
+      months: (p.months || []).map(Number),
+      fcast: ((p.forecast && p.forecast.forecast) || []).map(Number),
+      mape: (p.forecast && p.forecast.mape) || 0,
       stBegin, stRecv, stSold
     };
   }
@@ -1022,7 +1017,7 @@ class Component extends DCLogic {
       if (r.fill < 0.9) alerts.push({ sev:'err', title:'Backorders elevados', product:r.name, desc:`Fill rate de ${this.fmt(r.fill*100,1)}% — ${this.fmt(r.boUnits)} unidades pendientes de entrega a clientes.`, action:'Priorizar reposición' });
       if (r.status === 'over') alerts.push({ sev:'warn', title:'Capital inmovilizado', product:r.name, desc:`Stock actual (${this.fmt(r.stock)} u) duplica el nivel objetivo. ${this.moneyM(r.stock*r.unitCost)} inmovilizados.`, action:'Frenar reposición' });
       if (r.turns < 6 && r.status !== 'over') alerts.push({ sev:'warn', title:'Rotación baja', product:r.name, desc:`${this.fmt(r.turns,1)} vueltas/año (${this.fmt(r.dsi)} días de inventario) — revisar política de lote.`, action:'Revisar EOQ' });
-      if (r.st < 0.45) alerts.push({ sev:'warn', title:'Sell-through débil', product:r.name, desc:`Solo ${this.fmt(r.st*100)}% de las unidades disponibles se vendieron en junio.`, action:'Revisar pricing' });
+      if (r.st < 0.45) alerts.push({ sev:'warn', title:'Sell-through débil', product:r.name, desc:`Solo ${this.fmt(r.st*100)}% de las unidades disponibles se vendieron en el último mes.`, action:'Revisar pricing' });
     });
     const sevMeta = { err:{dot:C.err, tagBg:errB, tagFg:C.err, tag:'CRÍTICA'}, warn:{dot:C.warn, tagBg:warnB, tagFg:C.warn, tag:'ADVERTENCIA'} };
     const diagAlerts = alerts.sort((a,b) => a.sev === b.sev ? 0 : a.sev === 'err' ? -1 : 1)
@@ -1069,11 +1064,11 @@ class Component extends DCLogic {
     const totMonthly = rows.reduce((s,r) => s + r.monthlyD, 0);
     const gFill = totMonthly > 0 ? 1 - totBo/totMonthly : 1;
     const dashKpis = [
-      { label:'Valor de inventario', value:this.moneyM(invValue), delta:'+3,2%', deltaColor:C.ok, sub:'vs. mayo' },
-      { label:'Costo anual de gestión', value:this.moneyM(totalTC), delta:'−5,8%', deltaColor:C.ok, sub:'con lotes óptimos' },
-      { label:'SKUs en alerta', value:String(nAlerts)+' / '+rows.length, delta:nAlerts>2?'+1':'—', deltaColor:nAlerts>2?C.err:C.sec, sub:'requieren acción' },
-      { label:'Rotación promedio', value:this.fmt(wTurns,1)+'×', delta:'+0,4×', deltaColor:C.ok, sub:'ponderada por valor' },
-      { label:'Fill rate global', value:this.fmt(gFill*100,1)+'%', delta:'−0,6 pp', deltaColor:C.err, sub:'objetivo ≥ 97%' }
+      { label:'Valor de inventario', value:this.moneyM(invValue), sub:'inventario actual valorizado' },
+      { label:'Costo anual de gestión', value:this.moneyM(totalTC), sub:'con lotes óptimos' },
+      { label:'SKUs en alerta', value:String(nAlerts)+' / '+rows.length, sub:'requieren acción' },
+      { label:'Rotación promedio', value:this.fmt(wTurns,1)+'×', sub:'ponderada por valor' },
+      { label:'Fill rate global', value:this.fmt(gFill*100,1)+'%', sub:'objetivo ≥ 97%' }
     ];
     const maxInvVal = Math.max(...rows.map(r => r.stock*r.unitCost)) || 1;
     const valueBars = rows.slice().sort((a,b) => b.stock*b.unitCost - a.stock*a.unitCost).map(r => ({
@@ -1166,8 +1161,8 @@ class Component extends DCLogic {
     const totSold = rows.reduce((s,r) => s + r.stSold, 0);
     const stKpis = [
       { label:'Sell-through promedio', value:this.fmt(totSold/totAvail*100,1)+'%', sub:'objetivo mensual: ≥ 55%' },
-      { label:'Unidades vendidas (jun)', value:this.fmt(totSold), sub:'sobre '+this.fmt(totAvail)+' disponibles' },
-      { label:'Unidades recibidas (jun)', value:this.fmt(rows.reduce((s,r)=>s+r.stRecv,0)), sub:this.fmt(rows.reduce((s,r)=>s+r.N/12,1))+' órdenes recepcionadas' }
+      { label:'Unidades vendidas (último mes)', value:this.fmt(totSold), sub:'sobre '+this.fmt(totAvail)+' disponibles' },
+      { label:'Unidades recibidas (último mes)', value:this.fmt(rows.reduce((s,r)=>s+r.stRecv,0)), sub:'estimado según ciclo de pedidos' }
     ];
     const stRows = rows.slice().sort((a,b) => b.st - a.st).map((r, i) => {
       const pct = r.st*100;
@@ -1195,24 +1190,45 @@ class Component extends DCLogic {
 
     // ---- forecasting ----
     const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const baseM = totalVal / 12;
-    const seas = m => 1 + 0.14*Math.sin((m - 9.5)/12*2*Math.PI);
+    const hasReal = S.fileName && S.products.some(p => p.months && p.months.length === 12);
     const hist = [];
-    for (let k = 0; k < 12; k++) {
-      const mIdx = (7 + k) % 12; // Ago'25 .. Jul'26
-      hist.push({ m: mIdx, v: baseM * (1 + 0.006*k) * seas(mIdx) * (1 + 0.045*Math.sin(k*2.3)) });
-    }
     const proj = [];
-    for (let k = 0; k < fh; k++) {
-      const mIdx = (7 + k) % 12; // Ago'26 ..
-      const v = baseM * (1 + 0.006*(12+k)) * (1 + 0.008*(k+1)) * seas(mIdx);
-      proj.push({ m: mIdx, v, lo: v*(1 - 0.045 - 0.011*k), hi: v*(1 + 0.045 + 0.011*k) });
+    if (hasReal) {
+      // demanda mensual valorizada real (Excel) + proyección del backend
+      for (let k = 0; k < 12; k++) {
+        let v = 0;
+        S.products.forEach(p => { if (p.months && p.months[k] != null) v += p.months[k] * (p.unitCost || 0); });
+        hist.push({ m: k, v });
+      }
+      for (let k = 0; k < fh; k++) {
+        let v = 0;
+        S.products.forEach(p => {
+          const f = p.fcast || [];
+          const u = f.length ? f[Math.min(k, f.length - 1)] : p.demand / 12;
+          v += u * (p.unitCost || 0);
+        });
+        proj.push({ m: k % 12, v, lo: v, hi: v });
+      }
+    } else {
+      // modo demostración: curva sintética
+      const baseM = totalVal / 12;
+      const seas = m => 1 + 0.14*Math.sin((m - 9.5)/12*2*Math.PI);
+      for (let k = 0; k < 12; k++) {
+        const mIdx = (7 + k) % 12;
+        hist.push({ m: mIdx, v: baseM * (1 + 0.006*k) * seas(mIdx) * (1 + 0.045*Math.sin(k*2.3)) });
+      }
+      for (let k = 0; k < fh; k++) {
+        const mIdx = (7 + k) % 12;
+        const v = baseM * (1 + 0.006*(12+k)) * (1 + 0.008*(k+1)) * seas(mIdx);
+        proj.push({ m: mIdx, v, lo: v*(1 - 0.045 - 0.011*k), hi: v*(1 + 0.045 + 0.011*k) });
+      }
     }
     const all = hist.map(h=>h.v).concat(proj.map(p=>p.hi), proj.map(p=>p.lo));
     const vMin = Math.min(...all)*0.92, vMax = Math.max(...all)*1.04;
+    const vSpan = (vMax - vMin) || 1;
     const nPts = 12 + fh;
     const fx = i => 46 + i/(nPts-1) * 702;
-    const fy = v => 222 - (v-vMin)/(vMax-vMin) * 200;
+    const fy = v => 222 - (v-vMin)/vSpan * 200;
     const histPts = hist.map((h,i) => this.fmt0(fx(i))+','+this.fmt0(fy(h.v))).join(' ');
     const projAll = [{ v: hist[11].v, lo: hist[11].v, hi: hist[11].v }].concat(proj);
     const projPts = projAll.map((p,i) => this.fmt0(fx(11+i))+','+this.fmt0(fy(p.v))).join(' ');
@@ -1224,14 +1240,22 @@ class Component extends DCLogic {
     const projTotal = proj.reduce((s,p) => s+p.v, 0);
     const histAvg = hist.reduce((s,h) => s+h.v, 0)/12;
     const projAvg = projTotal/fh;
+    const mapePs = S.products.filter(p => p.mape > 0);
+    const wMape = mapePs.length ? mapePs.reduce((s,p) => s + p.mape * p.demand, 0) / (mapePs.reduce((s,p) => s + p.demand, 0) || 1) : null;
     const fcKpis = [
       { label:'Proyección próx. '+fh+' meses', value:this.moneyM(projTotal), color:'#1A2332', sub:'demanda valorizada estimada' },
       { label:'Tendencia', value:(projAvg/histAvg>=1?'+':'')+this.fmt((projAvg/histAvg-1)*100,1)+'%', color:projAvg>=histAvg?C.ok:C.err, sub:'promedio proyectado vs. histórico' },
-      { label:'MAPE del modelo', value:'6,8%', color:C.ok, sub:'error absoluto medio (backtest 12m)' },
-      { label:'Modelo', value:'Holt-Winters', color:'#1A2332', sub:'estacionalidad aditiva · reentrenado 01/07' }
+      { label:'MAPE del modelo', value: wMape != null ? this.fmt(wMape,1)+'%' : '—', color: wMape != null && wMape > 20 ? C.warn : C.ok, sub: wMape != null ? 'error medio de ajuste (12 meses)' : 'disponible al importar tu Excel' },
+      { label:'Modelo', value:'Suavizado exp.', color:'#1A2332', sub:'alpha optimizado por producto' }
     ];
     const fcRows = rows.slice().sort((a,b) => b.trend - a.trend).map((r, i) => {
-      const projU = r.D/12 * fh * (1 + r.trend/100 * (fh/12 + 0.25));
+      let projU;
+      if (r.fcast && r.fcast.length) {
+        projU = 0;
+        for (let k = 0; k < fh; k++) projU += r.fcast[Math.min(k, r.fcast.length - 1)];
+      } else {
+        projU = r.D/12 * fh * (1 + r.trend/100 * (fh/12 + 0.25));
+      }
       const d = r.trend;
       const bdg = d >= 8 ? {bg:okB, fg:C.ok, label:'Crecimiento fuerte'} : d >= 0 ? {bg:priB, fg:C.pri, label:'Estable / al alza'} : {bg:warnB, fg:C.warn, label:'En descenso'};
       return { name:r.name, hist:this.fmt(r.D), proj:this.fmt(projU),
