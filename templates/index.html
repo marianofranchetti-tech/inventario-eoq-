@@ -9,74 +9,62 @@
 :root{
   --bg:#0F1117;--bg2:#1A1D27;--bg3:#22263A;
   --border:#2E3250;--text:#E8EAF6;--text2:#9196B5;--text3:#5A5F7A;
-  --green:#1D9E75;--green2:#0F6E56;--green3:#E1F5EE;--green4:#085041;
-  --amber:#EF9F27;--amber2:#FAEEDA;--amber3:#854F0B;
-  --red:#E24B4A;--red2:#FCEBEB;--red3:#A32D2D;
-  --mono:'Courier New',monospace;
+  --green:#1D9E75;--green2:#0F6E56;
+  --amber:#EF9F27;--red:#E24B4A;--blue:#4A90D9;
   --radius:8px;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
-/* HEADER */
-.header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:var(--bg2)}
-.header h1{font-size:16px;font-weight:600;margin-bottom:2px}
+.header{padding:.875rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:var(--bg2)}
+.header h1{font-size:15px;font-weight:600;margin-bottom:1px}
 .header p{font-size:11px;color:var(--text2)}
 .status{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
 .status.ok{background:#0A2E22;color:var(--green);border-color:var(--green2)}
-/* TABS */
-.tabs{display:flex;gap:2px;padding:0 1.5rem;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
-.tab{padding:10px 14px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tabs{display:flex;gap:2px;padding:0 1.5rem;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:9px 13px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
 .tab.active{color:var(--text);border-bottom-color:var(--green);font-weight:600}
 .tab:hover:not(.active){color:var(--text)}
-/* PANELS */
+.tab-group{padding:2px 8px;font-size:10px;color:var(--text3);align-self:center;flex-shrink:0}
 .main{padding:1.25rem 1.5rem;max-width:1400px;margin:0 auto}
 .panel{display:none}.panel.active{display:block}
-/* CARDS */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.75rem}
 .card-title{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem}
-/* GRIDS */
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.75rem}
-@media(max-width:768px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
-/* METRIC CARDS */
+@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
 .mc{background:var(--bg3);border-radius:var(--radius);padding:.75rem}
 .mc-label{font-size:10px;color:var(--text2);margin-bottom:4px}
-.mc-val{font-size:19px;font-weight:700;font-family:var(--mono)}
+.mc-val{font-size:19px;font-weight:700;font-family:'Courier New',monospace}
 .mc-sub{font-size:10px;color:var(--text3);margin-top:2px}
-/* TABLES */
 .tw{overflow-x:auto;margin-bottom:.75rem;border-radius:var(--radius);border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse}
 th{font-size:10px;font-weight:600;color:var(--text2);text-align:left;padding:7px 8px;white-space:nowrap;background:var(--bg3);border-bottom:1px solid var(--border)}
-td{padding:6px 8px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--border);font-family:'Courier New',monospace;font-size:11px;white-space:nowrap}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--bg3)}
-/* BADGES */
 .badge{display:inline-block;padding:1px 7px;border-radius:3px;font-size:10px;font-weight:700;font-family:sans-serif}
 .bA{background:#3D1515;color:#F97171}.bB{background:#3D2E0A;color:#F4B942}.bC{background:#0A2E22;color:#4DD4A0}
 .bok{background:#0A2E22;color:#4DD4A0}.bwarn{background:#3D2E0A;color:#F4B942}.bcrit{background:#3D1515;color:#F97171}
+.binfo{background:#0A1E3D;color:#6BAAEE}
 .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle}
 .dok{background:var(--green)}.dwarn{background:var(--amber)}.dcrit{background:var(--red)}
-/* FORM */
-select,input[type=number]{width:100%;padding:6px 9px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-family:var(--mono)}
+select,input[type=number]{width:100%;padding:6px 9px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text);font-family:monospace}
 select:focus,input:focus{outline:none;border-color:var(--green)}
 .form-label{font-size:11px;color:var(--text2);margin-bottom:3px;display:block}
-/* BUTTONS */
 .btn{padding:7px 16px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text);cursor:pointer;transition:all .15s}
 .btn:hover{background:var(--bg3)}
 .btn.prim{background:var(--green);border-color:var(--green);color:#fff}
 .btn.prim:hover{background:var(--green2)}
-/* UPLOAD */
 .upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:2.5rem 1rem;text-align:center;cursor:pointer;transition:all .2s}
 .upload-zone:hover,.upload-zone.drag{border-color:var(--green);background:var(--bg3)}
-.upload-icon{font-size:32px;margin-bottom:.5rem}
-/* INSIGHTS */
 .ins{border-left:2px solid var(--green);padding:8px 12px;background:var(--bg3);border-radius:0 6px 6px 0;margin-bottom:6px;font-size:11px;line-height:1.5}
-.iw{border-left-color:var(--amber)}.ic{border-left-color:var(--red)}
-/* LOG */
-#log{font-size:11px;color:var(--text2);margin-top:.5rem;font-family:var(--mono);min-height:18px;padding:0 .5rem}
-/* SPINNER */
-.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle}
+.iw{border-left-color:var(--amber)}.ic{border-left-color:var(--red)}.ii{border-left-color:var(--blue)}
+#log{font-size:11px;color:var(--text2);margin-top:.5rem;min-height:18px;padding:0 .25rem}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .6s linear infinite;margin-right:5px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
+.bar-wrap{width:100%;background:var(--bg);border-radius:3px;height:6px;overflow:hidden;display:inline-block;vertical-align:middle;min-width:60px}
+.bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.forecast-month{display:inline-block;text-align:center;padding:4px 6px;background:var(--bg3);border-radius:4px;font-family:monospace;font-size:11px;min-width:54px}
 </style>
 </head>
 <body>
@@ -84,9 +72,9 @@ select:focus,input:focus{outline:none;border-color:var(--green)}
 <div class="header">
   <div>
     <h1>Analizador de Inventarios</h1>
-    <p>Modelo EOQ probabilístico · Clasificación ABC diferenciada · Importación Excel</p>
+    <p>EOQ probabilístico · ABC · Rotación · Sell-through · Backorders · Forecasting IA</p>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span class="status" id="status-badge">Sin datos</span>
     <button class="btn prim" onclick="document.getElementById('fi').click()">↑ Cargar Excel</button>
     <input type="file" id="fi" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
@@ -96,32 +84,31 @@ select:focus,input:focus{outline:none;border-color:var(--green)}
 <div class="tabs">
   <button class="tab active" id="t0" onclick="showTab(0)">Inicio</button>
   <button class="tab" id="t1" onclick="showTab(1)">Parámetros</button>
+  <span class="tab-group">— EOQ —</span>
   <button class="tab" id="t2" onclick="showTab(2)">Resultados EOQ</button>
-  <button class="tab" id="t3" onclick="showTab(3)">Clasificación ABC</button>
+  <button class="tab" id="t3" onclick="showTab(3)">ABC</button>
   <button class="tab" id="t4" onclick="showTab(4)">Diagnóstico</button>
   <button class="tab" id="t5" onclick="showTab(5)">Sensibilidad</button>
+  <span class="tab-group">— Avanzado —</span>
+  <button class="tab" id="t6" onclick="showTab(6)">Rotación</button>
+  <button class="tab" id="t7" onclick="showTab(7)">Sell-through</button>
+  <button class="tab" id="t8" onclick="showTab(8)">Backorders</button>
+  <button class="tab" id="t9" onclick="showTab(9)">Forecasting IA</button>
 </div>
 
 <div class="main">
 
 <!-- TAB 0: INICIO -->
 <div id="p0" class="panel active">
-  <div class="upload-zone" id="dropzone"
-    onclick="document.getElementById('fi').click()"
-    ondragover="event.preventDefault();this.classList.add('drag')"
-    ondragleave="this.classList.remove('drag')"
-    ondrop="handleDrop(event)">
-    <div class="upload-icon">📊</div>
-    <h3 style="font-size:15px;font-weight:600;margin-bottom:.4rem">Cargá tu archivo Excel</h3>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:1rem;max-width:400px;margin-left:auto;margin-right:auto">
-      El sistema detecta automáticamente los parámetros y productos según la estructura del modelo.
-    </p>
+  <div class="upload-zone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)" onclick="document.getElementById('fi').click()">
+    <div style="font-size:30px;margin-bottom:.5rem">📊</div>
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:.3rem">Cargá tu archivo Excel</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem;max-width:400px;margin-left:auto;margin-right:auto">El sistema detecta automáticamente parámetros y productos. Arrastrá el archivo o hacé click.</p>
     <button class="btn prim" onclick="event.stopPropagation();document.getElementById('fi').click()">Seleccionar archivo</button>
   </div>
   <div id="log"></div>
-  <div style="margin-top:1.25rem" class="g2">
-    <div class="card">
-      <p class="card-title">Parámetros — hoja única (col A / col B)</p>
+  <div style="margin-top:1rem" class="g2">
+    <div class="card"><p class="card-title">Parámetros (col A / col B)</p>
       <table><tbody>
         <tr><td style="color:var(--text2)">Fila 5</td><td>Nivel servicio A → 0.99</td></tr>
         <tr><td style="color:var(--text2)">Fila 6</td><td>Nivel servicio B → 0.97</td></tr>
@@ -130,16 +117,14 @@ select:focus,input:focus{outline:none;border-color:var(--green)}
         <tr><td style="color:var(--text2)">Fila 9</td><td>Costo m²/mes → $9500</td></tr>
       </tbody></table>
     </div>
-    <div class="card">
-      <p class="card-title">Productos — desde fila 14</p>
+    <div class="card"><p class="card-title">Productos (desde fila 14)</p>
       <table><tbody>
         <tr><td style="color:var(--text2)">Col A</td><td>Código</td></tr>
         <tr><td style="color:var(--text2)">Col B</td><td>Nombre</td></tr>
         <tr><td style="color:var(--text2)">Col C</td><td>Volumen m³</td></tr>
         <tr><td style="color:var(--text2)">Col E</td><td>Lead time (días)</td></tr>
         <tr><td style="color:var(--text2)">Col F–Q</td><td>Ventas ene–dic</td></tr>
-        <tr><td style="color:var(--text2)">Col S</td><td>Precio de venta</td></tr>
-        <tr><td style="color:var(--text2)">Col T</td><td>Costo unitario</td></tr>
+        <tr><td style="color:var(--text2)">Col S/T</td><td>Precio / Costo unitario</td></tr>
       </tbody></table>
     </div>
   </div>
@@ -148,45 +133,31 @@ select:focus,input:focus{outline:none;border-color:var(--green)}
 <!-- TAB 1: PARAMS -->
 <div id="p1" class="panel">
   <div class="card">
-    <p class="card-title">Parámetros del modelo — editables (recalcula automáticamente)</p>
+    <p class="card-title">Parámetros del modelo — editables</p>
     <div class="g3">
-      <div><label class="form-label">Nivel servicio A</label>
-        <select id="pza" onchange="recalc()"><option value="2.326">99% (z=2.326)</option><option value="2.054">98%</option><option value="1.881">97%</option><option value="1.645">95%</option></select></div>
-      <div><label class="form-label">Nivel servicio B</label>
-        <select id="pzb" onchange="recalc()"><option value="2.054">98%</option><option value="1.881">97%</option><option value="1.645">95%</option><option value="1.282">90%</option></select></div>
-      <div><label class="form-label">Nivel servicio C</label>
-        <select id="pzc" onchange="recalc()"><option value="1.881">97%</option><option value="1.645">95%</option><option value="1.282">90%</option><option value="1.036">85%</option></select></div>
-      <div><label class="form-label">Costo pedido % sobre valor lote</label>
-        <input type="number" id="pkpct" value="4" min="0" max="20" step="0.1" oninput="recalcDebounced()"></div>
-      <div><label class="form-label">Costo m²/mes almacén ($)</label>
-        <input type="number" id="pcloc" value="9500" min="0" step="100" oninput="recalcDebounced()"></div>
-      <div><label class="form-label">Altura apilamiento (m)</label>
-        <input type="number" id="palt" value="2" min="0.5" max="10" step="0.1" oninput="recalcDebounced()"></div>
+      <div><label class="form-label">Nivel servicio A</label><select id="pza" onchange="recalc()"><option value="2.326">99% (z=2.326)</option><option value="2.054">98%</option><option value="1.881">97%</option><option value="1.645">95%</option></select></div>
+      <div><label class="form-label">Nivel servicio B</label><select id="pzb" onchange="recalc()"><option value="2.054">98%</option><option value="1.881">97%</option><option value="1.645">95%</option><option value="1.282">90%</option></select></div>
+      <div><label class="form-label">Nivel servicio C</label><select id="pzc" onchange="recalc()"><option value="1.881">97%</option><option value="1.645">95%</option><option value="1.282">90%</option><option value="1.036">85%</option></select></div>
+      <div><label class="form-label">Costo pedido % sobre valor</label><input type="number" id="pkpct" value="4" min="0" max="20" step="0.1" oninput="recalcD()"></div>
+      <div><label class="form-label">Costo m²/mes almacén ($)</label><input type="number" id="pcloc" value="9500" min="0" step="100" oninput="recalcD()"></div>
+      <div><label class="form-label">Altura apilamiento (m)</label><input type="number" id="palt" value="2" min="0.5" step="0.1" oninput="recalcD()"></div>
     </div>
   </div>
-  <div class="card">
-    <p class="card-title">Productos cargados (<span id="pcnt">0</span>)</p>
+  <div class="card"><p class="card-title">Productos cargados (<span id="pcnt">0</span>)</p>
     <div class="tw"><table>
-      <thead><tr><th>Código</th><th>Nombre</th><th>Vol m³</th><th>Lead time</th><th>D anual</th><th>Precio venta</th><th>Costo unit.</th><th>Clase</th></tr></thead>
+      <thead><tr><th>Código</th><th>Nombre</th><th>Vol m³</th><th>LT</th><th>D anual</th><th>Precio</th><th>Costo</th><th>Clase</th></tr></thead>
       <tbody id="ptbody"></tbody>
     </table></div>
   </div>
-  <div style="display:flex;justify-content:flex-end">
-    <button class="btn prim" onclick="showTab(2)">Ver resultados EOQ →</button>
-  </div>
+  <div style="display:flex;justify-content:flex-end"><button class="btn prim" onclick="showTab(2)">Ver EOQ →</button></div>
 </div>
 
 <!-- TAB 2: EOQ -->
 <div id="p2" class="panel">
   <div class="g4" id="ekpis"></div>
-  <p class="card-title">Tabla EOQ probabilístico completa</p>
+  <p class="card-title">Tabla EOQ probabilístico</p>
   <div class="tw"><table>
-    <thead><tr>
-      <th>Código</th><th>Nombre</th><th>Clase</th><th>z</th><th>Estado</th>
-      <th>D anual</th><th>CV</th><th>σ mensual</th><th>SS (u)</th><th>EOQ (Q*)</th>
-      <th>Ped./año</th><th>Ciclo (d)</th><th>Pto. reorden</th>
-      <th>Inv. prom.</th><th>K ($)</th><th>h ($)</th><th>CIT</th><th>Rent.</th>
-    </tr></thead>
+    <thead><tr><th>Código</th><th>Nombre</th><th>Clase</th><th>z</th><th>Estado</th><th>D anual</th><th>CV</th><th>SS (u)</th><th>EOQ (Q*)</th><th>Ped./año</th><th>Ciclo (d)</th><th>Pto. reorden</th><th>Inv. prom.</th><th>K ($)</th><th>h ($)</th><th>CIT</th><th>Rent.</th></tr></thead>
     <tbody id="etbody"></tbody>
   </table></div>
 </div>
@@ -194,117 +165,182 @@ select:focus,input:focus{outline:none;border-color:var(--green)}
 <!-- TAB 3: ABC -->
 <div id="p3" class="panel">
   <div class="g3" id="akpis"></div>
-  <p class="card-title">Ranking por valor de venta anual</p>
   <div class="tw"><table>
     <thead><tr><th>Clase</th><th>Código</th><th>Nombre</th><th>Venta anual</th><th>% total</th><th>% acum.</th><th>z</th><th>SS (u)</th><th>EOQ</th><th>Ciclo</th></tr></thead>
     <tbody id="atbody"></tbody>
   </table></div>
-  <div style="position:relative;width:100%;height:200px;margin-top:.75rem">
-    <canvas id="achart" aria-label="Gráfico ABC">ABC.</canvas>
-  </div>
+  <div style="position:relative;width:100%;height:200px;margin-top:.75rem"><canvas id="achart"></canvas></div>
 </div>
 
-<!-- TAB 4: DIAG -->
+<!-- TAB 4: DIAGNÓSTICO -->
 <div id="p4" class="panel">
   <div class="g3" id="dkpis"></div>
   <p class="card-title">Alertas por producto</p>
   <div id="dins"></div>
-  <div style="position:relative;width:100%;height:240px;margin-top:.75rem">
-    <canvas id="dchart" aria-label="CIT por producto">CIT.</canvas>
-  </div>
+  <div style="position:relative;width:100%;height:240px;margin-top:.75rem"><canvas id="dchart"></canvas></div>
   <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text2)">
-    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--green);margin-right:4px;vertical-align:middle"></span>CIT base (EOQ)</span>
-    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--red);margin-right:4px;vertical-align:middle"></span>Costo adicional SS</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--green);margin-right:4px;vertical-align:middle"></span>CIT base</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--red);margin-right:4px;vertical-align:middle"></span>Costo SS</span>
   </div>
 </div>
 
-<!-- TAB 5: SENS -->
+<!-- TAB 5: SENSIBILIDAD -->
 <div id="p5" class="panel">
-  <div class="card"><p class="card-title">Producto a analizar</p>
-    <select id="ssel" onchange="renderSens()" style="max-width:320px"></select>
-  </div>
+  <div class="card"><p class="card-title">Producto</p><select id="ssel" onchange="renderSens()" style="max-width:300px"></select></div>
   <div class="g2">
     <div class="card"><p class="card-title">Variación costo de pedido (K)</p><div id="sk"></div></div>
     <div class="card"><p class="card-title">Variación costo almacenaje (h)</p><div id="sh"></div></div>
   </div>
-  <div class="card">
-    <p class="card-title">Curvas CIT — variaciones combinadas K y h</p>
-    <div style="position:relative;width:100%;height:240px">
-      <canvas id="schart" aria-label="Sensibilidad CIT">Sens.</canvas>
-    </div>
+  <div class="card"><p class="card-title">Curvas CIT combinadas</p>
+    <div style="position:relative;width:100%;height:230px"><canvas id="schart"></canvas></div>
   </div>
 </div>
 
-</div><!-- /main -->
+<!-- TAB 6: ROTACIÓN -->
+<div id="p6" class="panel">
+  <div class="g4" id="rkpis"></div>
+  <p class="card-title">Análisis de rotación por producto</p>
+  <div class="tw"><table>
+    <thead><tr><th>Código</th><th>Nombre</th><th>Clase</th><th>D anual</th><th>Inv. prom.</th><th>Rotación</th><th>Días stock (DSI)</th><th>Clasificación</th></tr></thead>
+    <tbody id="rtbody"></tbody>
+  </table></div>
+  <div class="card" style="margin-top:.5rem">
+    <p class="card-title">Rotación vs. días de inventario</p>
+    <div style="position:relative;width:100%;height:240px"><canvas id="rchart"></canvas></div>
+  </div>
+  <div class="card">
+    <p class="card-title">¿Qué significa la rotación?</p>
+    <div class="ins ii">Una rotación de <b>12</b> significa que reponés el inventario completo 12 veces al año — una vez por mes. Rotación alta = capital liberado. Rotación baja = capital inmovilizado.</div>
+    <div class="ins iw">Rotación &lt; 4: inventario excesivo. Entre 4 y 12: zona aceptable. &gt; 12: rotación alta, cuidado con quiebres de stock.</div>
+  </div>
+</div>
+
+<!-- TAB 7: SELL-THROUGH -->
+<div id="p7" class="panel">
+  <div class="g3" id="stkpis"></div>
+  <p class="card-title">Sell-through rate por producto</p>
+  <div class="tw"><table>
+    <thead><tr><th>Código</th><th>Nombre</th><th>Clase</th><th>Sell-through</th><th>Barra</th><th>Ventas/mes</th><th>Stock prom.</th><th>Interpretación</th></tr></thead>
+    <tbody id="sttbody"></tbody>
+  </table></div>
+  <div class="card" style="margin-top:.5rem">
+    <p class="card-title">¿Qué es el sell-through?</p>
+    <div class="ins ii">Mide qué porcentaje del inventario disponible (stock + ventas del mes) se vendió efectivamente. Un sell-through del <b>80%</b> significa que 8 de cada 10 unidades disponibles se vendieron.</div>
+    <div class="ins iw">Sell-through &lt; 50%: sobrestock o demanda baja. Entre 50–80%: zona saludable. &gt; 80%: riesgo de faltante.</div>
+  </div>
+</div>
+
+<!-- TAB 8: BACKORDERS -->
+<div id="p8" class="panel">
+  <div class="g3" id="bokpis"></div>
+  <p class="card-title">Análisis de riesgo de backorder por producto</p>
+  <div class="tw"><table>
+    <thead><tr><th>Código</th><th>Nombre</th><th>Clase</th><th>Meses en riesgo</th><th>% meses riesgo</th><th>Backorder est. (u)</th><th>Valor backorder</th><th>Nivel riesgo</th></tr></thead>
+    <tbody id="botbody"></tbody>
+  </table></div>
+  <div style="position:relative;width:100%;height:240px;margin-top:.75rem"><canvas id="bochart"></canvas></div>
+  <div class="card" style="margin-top:.5rem">
+    <p class="card-title">¿Cómo se calcula el riesgo de backorder?</p>
+    <div class="ins ii">Comparamos la demanda mensual histórica contra el inventario promedio. Cuando la demanda supera el stock disponible en algún mes, ese mes se clasifica como "mes en riesgo". El backorder estimado es la suma de los excesos.</div>
+    <div class="ins iw">Para eliminar backorders: aumentá el stock de seguridad, reducí el lead time, o ajustá el EOQ. La pestaña EOQ ya incorpora el SS probabilístico para mitigar este riesgo.</div>
+  </div>
+</div>
+
+<!-- TAB 9: FORECASTING -->
+<div id="p9" class="panel">
+  <div class="g3" id="fckpis"></div>
+  <div class="card">
+    <p class="card-title">Producto a analizar</p>
+    <select id="fcsel" onchange="renderForecast()" style="max-width:320px"></select>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <p class="card-title">Forecast — próximos 6 meses</p>
+      <div id="fc-months" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem"></div>
+      <div id="fc-meta" style="font-size:11px;color:var(--text2)"></div>
+    </div>
+    <div class="card">
+      <p class="card-title">Métricas del modelo</p>
+      <div id="fc-metrics"></div>
+    </div>
+  </div>
+  <div class="card">
+    <p class="card-title">Demanda histórica vs. modelo ajustado vs. forecast</p>
+    <div style="position:relative;width:100%;height:260px"><canvas id="fcchart"></canvas></div>
+    <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text2)">
+      <span><span style="display:inline-block;width:16px;height:2px;background:var(--green);margin-right:4px;vertical-align:middle"></span>Demanda real</span>
+      <span><span style="display:inline-block;width:16px;height:2px;background:var(--amber);border-top:2px dashed;margin-right:4px;vertical-align:middle"></span>Modelo ajustado</span>
+      <span><span style="display:inline-block;width:16px;height:2px;background:var(--blue);border-top:2px dashed;margin-right:4px;vertical-align:middle"></span>Forecast</span>
+    </div>
+  </div>
+  <div class="card">
+    <p class="card-title">¿Cómo funciona el forecasting?</p>
+    <div class="ins ii">Usamos <b>suavizado exponencial simple (SES)</b> con optimización automática del parámetro alpha. El sistema prueba 9 valores de alpha (0.1 a 0.9) y selecciona el que minimiza el error cuadrático medio sobre los datos históricos.</div>
+    <div class="ins ii">La <b>tendencia</b> se detecta por regresión lineal sobre los 12 meses y se incorpora con un factor de amortiguación (0.3) para no sobreajustar.</div>
+    <div class="ins iw">El MAPE (error porcentual absoluto medio) indica la precisión: &lt;10% excelente, 10-20% bueno, &gt;20% revisar datos de entrada.</div>
+  </div>
+</div>
+
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-let products = [];
-let aC=null,dC=null,sC=null;
-let debounceTimer=null;
+let products=[], aC=null, dC=null, sC=null, rC=null, boC=null, fcC=null;
+let debT=null;
 
 const fmt  = (n,d=0) => (!isFinite(n)||isNaN(n))?'—':n.toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fmtM = n => n>=1e9?'$'+fmt(n/1e9,1)+'B':n>=1e6?'$'+fmt(n/1e6,1)+'M':n>=1e3?'$'+fmt(n/1e3,0)+'K':'$'+fmt(n,0);
 const gv   = id => parseFloat(document.getElementById(id).value)||0;
-const log  = (msg,type='') => {
-  const el=document.getElementById('log');
-  const color=type==='err'?'#F97171':type==='ok'?'#4DD4A0':'#9196B5';
-  el.innerHTML=`<span style="color:${color}">${msg}</span>`;
+const log  = (m,t='') => {
+  const c=t==='err'?'#F97171':t==='ok'?'#4DD4A0':'#9196B5';
+  document.getElementById('log').innerHTML=`<span style="color:${c}">${m}</span>`;
 };
 
+const TABS=10;
 function showTab(n){
-  for(let i=0;i<6;i++){
+  for(let i=0;i<TABS;i++){
     document.getElementById('t'+i).classList.toggle('active',i===n);
     document.getElementById('p'+i).classList.toggle('active',i===n);
   }
   if(n===5&&products.length) renderSens();
+  if(n===9&&products.length) renderForecast();
 }
 
 function handleDrop(e){
   e.preventDefault();
-  document.getElementById('dropzone').classList.remove('drag');
-  const f=e.dataTransfer.files[0];
-  if(f) uploadFile(f);
+  e.currentTarget.classList.remove('drag');
+  if(e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
 }
-
-function handleFile(input){
-  const f=input.files[0];
-  if(f) uploadFile(f);
-}
+function handleFile(inp){ if(inp.files[0]) uploadFile(inp.files[0]); }
 
 function uploadFile(file){
-  const fd=new FormData();
-  fd.append('file',file);
-  log('<span class="spin"></span> Procesando archivo...');
+  const fd=new FormData(); fd.append('file',file);
+  log('<span class="spin"></span> Procesando...');
   fetch('/api/parse-excel',{method:'POST',body:fd})
     .then(r=>r.json())
-    .then(data=>{
-      if(data.error){log('⚠ '+data.error,'err');return;}
-      // Setear params en UI
-      const {params,products:prods}=data;
+    .then(d=>{
+      if(d.error){log('⚠ '+d.error,'err');return;}
+      const {params,products:p}=d;
       document.getElementById('pkpct').value=params.kpct;
       document.getElementById('pcloc').value=params.cloc;
-      setZDropdown('pza',params.za);
-      setZDropdown('pzb',params.zb);
-      setZDropdown('pzc',params.zc);
-      products=prods;
+      setZ('pza',params.za); setZ('pzb',params.zb); setZ('pzc',params.zc);
+      products=p;
       finishLoad(file.name);
     })
-    .catch(err=>log('⚠ Error de conexión: '+err.message,'err'));
+    .catch(e=>log('⚠ Error: '+e.message,'err'));
 }
 
-function setZDropdown(id,z){
+function setZ(id,z){
   const el=document.getElementById(id);
-  const closest=[2.326,2.054,1.881,1.645,1.282,1.036].reduce((a,b)=>Math.abs(b-z)<Math.abs(a-z)?b:a);
-  el.value=closest;
+  const v=[2.326,2.054,1.881,1.645,1.282,1.036].reduce((a,b)=>Math.abs(b-z)<Math.abs(a-z)?b:a);
+  el.value=v;
 }
 
 function finishLoad(fname){
-  const badge=document.getElementById('status-badge');
-  badge.textContent=products.length+' productos cargados';
-  badge.className='status ok';
-  log(`✓ ${products.length} productos leídos de "${fname}"`, 'ok');
-  renderParams();
+  const b=document.getElementById('status-badge');
+  b.textContent=products.length+' productos';
+  b.className='status ok';
+  log(`✓ ${products.length} productos cargados de "${fname}"`, 'ok');
   renderAll();
   showTab(1);
 }
@@ -315,22 +351,21 @@ function getParams(){
 
 function recalc(){
   if(!products.length) return;
-  fetch('/api/recalc',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({products,params:getParams()})})
-  .then(r=>r.json())
-  .then(data=>{if(!data.error){products=data.products;renderAll();}})
-  .catch(()=>{});
+  fetch('/api/recalc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({products,params:getParams()})})
+    .then(r=>r.json()).then(d=>{if(!d.error){products=d.products;renderAll();}})
+    .catch(()=>{});
+}
+function recalcD(){ clearTimeout(debT); debT=setTimeout(recalc,500); }
+
+function renderAll(){
+  renderParams(); renderEOQ(); renderABC(); renderDiag();
+  renderRotacion(); renderSellThrough(); renderBackorders();
+  populateFcSel();
 }
 
-function recalcDebounced(){
-  clearTimeout(debounceTimer);
-  debounceTimer=setTimeout(recalc,500);
-}
+function stOf(p){ return p.cv>0.45?'crit':p.PR>p.EOQ||p.ciclo<7?'warn':'ok'; }
 
-function renderAll(){renderParams();renderEOQ();renderABC();renderDiag();}
-
-function stOf(p){return p.cv>0.45?'crit':p.PR>p.EOQ||p.ciclo<7?'warn':'ok';}
-
+// ── PARAMS ──────────────────────────────────────────────────────────────────
 function renderParams(){
   document.getElementById('pcnt').textContent=products.length;
   document.getElementById('ptbody').innerHTML=products.map(p=>`<tr>
@@ -342,16 +377,17 @@ function renderParams(){
   </tr>`).join('');
 }
 
+// ── EOQ ──────────────────────────────────────────────────────────────────────
 function renderEOQ(){
   const tCIT=products.reduce((a,x)=>a+x.CIT,0);
   const tSS=products.reduce((a,x)=>a+x.cSS,0);
   const tInv=products.reduce((a,x)=>a+x.val_inv,0);
   const avgC=products.reduce((a,x)=>a+x.ciclo,0)/products.length;
   document.getElementById('ekpis').innerHTML=`
-    <div class="mc"><div class="mc-label">CIT total portafolio/año</div><div class="mc-val">${fmtM(tCIT)}</div><div class="mc-sub">costo total inventario</div></div>
-    <div class="mc"><div class="mc-label">Costo stock de seguridad</div><div class="mc-val" style="color:var(--red)">${fmtM(tSS)}</div><div class="mc-sub">${fmt(tSS/tCIT*100,0)}% del CIT</div></div>
-    <div class="mc"><div class="mc-label">Capital inmovilizado</div><div class="mc-val">${fmtM(tInv)}</div><div class="mc-sub">valor inventario promedio</div></div>
-    <div class="mc"><div class="mc-label">Ciclo promedio</div><div class="mc-val">${fmt(avgC,1)}d</div><div class="mc-sub">días entre pedidos</div></div>`;
+    <div class="mc"><div class="mc-label">CIT total/año</div><div class="mc-val">${fmtM(tCIT)}</div><div class="mc-sub">costo total inventario</div></div>
+    <div class="mc"><div class="mc-label">Costo SS</div><div class="mc-val" style="color:var(--red)">${fmtM(tSS)}</div><div class="mc-sub">${fmt(tSS/tCIT*100,0)}% del CIT</div></div>
+    <div class="mc"><div class="mc-label">Capital inmovilizado</div><div class="mc-val">${fmtM(tInv)}</div></div>
+    <div class="mc"><div class="mc-label">Ciclo promedio</div><div class="mc-val">${fmt(avgC,1)}d</div></div>`;
   document.getElementById('etbody').innerHTML=products.map(p=>{
     const st=stOf(p);
     return `<tr>
@@ -362,7 +398,6 @@ function renderEOQ(){
       <td><span class="dot d${st}"></span><span class="badge b${st}">${st==='ok'?'Óptimo':st==='warn'?'Revisar':'Crítico'}</span></td>
       <td>${fmt(p.D)}</td>
       <td style="color:${p.cv>0.45?'var(--red)':p.cv>0.25?'var(--amber)':'var(--green)'}">${fmt(p.cv*100,1)}%</td>
-      <td>${fmt(p.sigma_m,0)}</td>
       <td style="color:var(--amber);font-weight:700">${fmt(p.SS,0)}</td>
       <td style="color:var(--green);font-weight:700">${fmt(p.EOQ,0)}</td>
       <td>${fmt(p.n_ped,1)}</td><td>${fmt(p.ciclo,1)}</td>
@@ -373,6 +408,7 @@ function renderEOQ(){
   }).join('');
 }
 
+// ── ABC ──────────────────────────────────────────────────────────────────────
 function renderABC(){
   const tVA=products.reduce((a,x)=>a+x.D*x.pv,0);
   const sorted=[...products].sort((a,b)=>b.D*b.pv-a.D*a.pv);
@@ -380,9 +416,9 @@ function renderABC(){
   const pA=sorted.filter(x=>x.clase==='A').reduce((a,x)=>a+x.D*x.pv/tVA*100,0);
   const pB=sorted.filter(x=>x.clase==='B').reduce((a,x)=>a+x.D*x.pv/tVA*100,0);
   document.getElementById('akpis').innerHTML=`
-    <div class="mc"><div class="mc-label">Clase A — ${nA} productos</div><div class="mc-val" style="color:#F97171">${fmt(pA,1)}%</div><div class="mc-sub">del valor · z=${gv('pza')}</div></div>
-    <div class="mc"><div class="mc-label">Clase B — ${nB} productos</div><div class="mc-val" style="color:var(--amber)">${fmt(pB,1)}%</div><div class="mc-sub">del valor · z=${gv('pzb')}</div></div>
-    <div class="mc"><div class="mc-label">Clase C — ${nC} productos</div><div class="mc-val" style="color:var(--green)">${fmt(100-pA-pB,1)}%</div><div class="mc-sub">del valor · z=${gv('pzc')}</div></div>`;
+    <div class="mc"><div class="mc-label">Clase A — ${nA} prod.</div><div class="mc-val" style="color:#F97171">${fmt(pA,1)}%</div><div class="mc-sub">z=${gv('pza')}</div></div>
+    <div class="mc"><div class="mc-label">Clase B — ${nB} prod.</div><div class="mc-val" style="color:var(--amber)">${fmt(pB,1)}%</div><div class="mc-sub">z=${gv('pzb')}</div></div>
+    <div class="mc"><div class="mc-label">Clase C — ${nC} prod.</div><div class="mc-val" style="color:var(--green)">${fmt(100-pA-pB,1)}%</div><div class="mc-sub">z=${gv('pzc')}</div></div>`;
   let cum=0;
   document.getElementById('atbody').innerHTML=sorted.map(p=>{
     const va=p.D*p.pv; cum+=va/tVA*100;
@@ -401,24 +437,24 @@ function renderABC(){
       {label:'% ítems',data:[nA,nB,nC].map(n=>+(n/products.length*100).toFixed(1)),backgroundColor:'#5DCAA5',borderRadius:4}
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{max:100,ticks:{color:'#9196B5',callback:v=>v+'%'}},x:{ticks:{color:'#9196B5'}},
-      ...[['x','y']].reduce((o,[x,y])=>({...o,[x]:{...o[x],grid:{color:'#2E3250'}},[y]:{...o[y],grid:{color:'#2E3250'}}}),{})}}
+      scales:{y:{max:100,ticks:{color:'#9196B5',callback:v=>v+'%'},grid:{color:'#2E3250'}},x:{ticks:{color:'#9196B5'},grid:{color:'#2E3250'}}}}
   });
 }
 
+// ── DIAG ──────────────────────────────────────────────────────────────────────
 function renderDiag(){
   const tCIT=products.reduce((a,x)=>a+x.CIT,0),tSS=products.reduce((a,x)=>a+x.cSS,0);
   const crit=products.filter(x=>stOf(x)==='crit').length,warn=products.filter(x=>stOf(x)==='warn').length;
   document.getElementById('dkpis').innerHTML=`
     <div class="mc"><div class="mc-label">CIT total/año</div><div class="mc-val">${fmtM(tCIT)}</div></div>
-    <div class="mc"><div class="mc-label">SS como % del CIT</div><div class="mc-val" style="color:var(--red)">${fmt(tSS/tCIT*100,0)}%</div></div>
-    <div class="mc"><div class="mc-label">Alertas activas</div><div class="mc-val" style="color:var(--amber)">${crit+warn}</div><div class="mc-sub">${crit} críticas · ${warn} a revisar</div></div>`;
+    <div class="mc"><div class="mc-label">SS % del CIT</div><div class="mc-val" style="color:var(--red)">${fmt(tSS/tCIT*100,0)}%</div></div>
+    <div class="mc"><div class="mc-label">Alertas</div><div class="mc-val" style="color:var(--amber)">${crit+warn}</div><div class="mc-sub">${crit} críticas · ${warn} a revisar</div></div>`;
   const ins=[];
   products.forEach(p=>{
     if(p.cv>0.45) ins.push({t:'ic',m:`<b>${p.name}</b>: CV=${fmt(p.cv*100,1)}% — demanda muy inestable. SS cuesta ${fmtM(p.cSS)}/año.`});
-    if(p.PR>p.EOQ) ins.push({t:'ic',m:`<b>${p.name}</b>: punto reorden (${fmt(p.PR,0)}u) > EOQ (${fmt(p.EOQ,0)}u). Lead time de ${p.lt} días es crítico.`});
-    if(p.ciclo<7) ins.push({t:'iw',m:`<b>${p.name}</b>: ciclo ${fmt(p.ciclo,1)}d — casi un pedido semanal.`});
-    if(p.SS/p.EOQ>0.8) ins.push({t:'iw',m:`<b>${p.name}</b>: SS (${fmt(p.SS,0)}u) = ${fmt(p.SS/p.EOQ*100,0)}% del EOQ.`});
+    if(p.PR>p.EOQ) ins.push({t:'ic',m:`<b>${p.name}</b>: punto reorden (${fmt(p.PR,0)}u) > EOQ. Lead time crítico.`});
+    if(p.ciclo<7) ins.push({t:'iw',m:`<b>${p.name}</b>: ciclo ${fmt(p.ciclo,1)}d — pedido casi semanal.`});
+    if(p.SS/p.EOQ>0.8) ins.push({t:'iw',m:`<b>${p.name}</b>: SS = ${fmt(p.SS/p.EOQ*100,0)}% del EOQ — variabilidad domina.`});
   });
   if(!ins.length) ins.push({t:'',m:'Sin alertas críticas.'});
   document.getElementById('dins').innerHTML=ins.slice(0,8).map(i=>`<div class="ins ${i.t}">${i.m}</div>`).join('');
@@ -429,32 +465,31 @@ function renderDiag(){
       {label:'Costo SS',data:products.map(x=>Math.round(x.cSS)),backgroundColor:'#E24B4A',borderRadius:3}
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{stacked:true,ticks:{color:'#9196B5'},grid:{color:'#2E3250'}},
-              y:{stacked:true,ticks:{color:'#9196B5',callback:v=>fmtM(v)},grid:{color:'#2E3250'}}}}
+      scales:{x:{stacked:true,ticks:{color:'#9196B5'},grid:{color:'#2E3250'}},y:{stacked:true,ticks:{color:'#9196B5',callback:v=>fmtM(v)},grid:{color:'#2E3250'}}}}
   });
 }
 
+// ── SENSIBILIDAD ──────────────────────────────────────────────────────────────
 function renderSens(){
   const sel=document.getElementById('ssel');
   if(!sel.options.length) sel.innerHTML=products.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
-  const p=products[parseInt(sel.value)||0];
-  if(!p) return;
+  const p=products[parseInt(sel.value)||0]; if(!p) return;
   const vars=[-50,-30,-10,0,10,30,50];
-  const sensFmt = n => `<td style="color:${n>0?'var(--red)':n<0?'var(--green)':'var(--text2)'}">${n>0?'+':''}${n}%</td>`;
-  let tK='<table><thead><tr><th>Var K</th><th>K</th><th>EOQ</th><th>CIT</th><th>Δ CIT</th></tr></thead><tbody>';
+  const sf=v=>`<td style="color:${v>0?'var(--red)':v<0?'var(--green)':'var(--text2)'}">${v>0?'+':''}${v}%</td>`;
+  let tK='<table><thead><tr><th>Var K</th><th>K</th><th>EOQ</th><th>CIT</th><th>Δ</th></tr></thead><tbody>';
   vars.forEach(v=>{
-    const Kv=p.K*(1+v/100),eoq=Math.sqrt(2*p.D*Kv/p.h),cit=(p.D/eoq)*Kv+(eoq/2+p.SS)*p.h,delta=cit-p.CIT;
-    tK+=`<tr style="${v===0?'background:var(--bg3)':''}">${sensFmt(v)}<td>${fmtM(Kv)}</td><td>${fmt(eoq,0)}</td><td>${fmtM(cit)}</td><td style="color:${delta>0?'var(--red)':'var(--green)'}">${delta>=0?'+':''}${fmtM(delta)}</td></tr>`;
+    const Kv=p.K*(1+v/100),eoq=Math.sqrt(2*p.D*Kv/p.h),cit=(p.D/eoq)*Kv+(eoq/2+p.SS)*p.h,d=cit-p.CIT;
+    tK+=`<tr style="${v===0?'background:var(--bg3)':''}">${sf(v)}<td>${fmtM(Kv)}</td><td>${fmt(eoq,0)}</td><td>${fmtM(cit)}</td><td style="color:${d>0?'var(--red)':'var(--green)'}">${d>=0?'+':''}${fmtM(d)}</td></tr>`;
   });
   document.getElementById('sk').innerHTML=tK+'</tbody></table>';
-  let tH='<table><thead><tr><th>Var h</th><th>h</th><th>EOQ</th><th>CIT</th><th>Δ CIT</th></tr></thead><tbody>';
+  let tH='<table><thead><tr><th>Var h</th><th>h</th><th>EOQ</th><th>CIT</th><th>Δ</th></tr></thead><tbody>';
   vars.forEach(v=>{
-    const hv=p.h*(1+v/100),eoq=Math.sqrt(2*p.D*p.K/hv),cit=(p.D/eoq)*p.K+(eoq/2+p.SS)*hv,delta=cit-p.CIT;
-    tH+=`<tr style="${v===0?'background:var(--bg3)':''}">${sensFmt(v)}<td>${fmtM(hv)}</td><td>${fmt(eoq,0)}</td><td>${fmtM(cit)}</td><td style="color:${delta>0?'var(--red)':'var(--green)'}">${delta>=0?'+':''}${fmtM(delta)}</td></tr>`;
+    const hv=p.h*(1+v/100),eoq=Math.sqrt(2*p.D*p.K/hv),cit=(p.D/eoq)*p.K+(eoq/2+p.SS)*hv,d=cit-p.CIT;
+    tH+=`<tr style="${v===0?'background:var(--bg3)':''}">${sf(v)}<td>${fmtM(hv)}</td><td>${fmt(eoq,0)}</td><td>${fmtM(cit)}</td><td style="color:${d>0?'var(--red)':'var(--green)'}">${d>=0?'+':''}${fmtM(d)}</td></tr>`;
   });
   document.getElementById('sh').innerHTML=tH+'</tbody></table>';
   if(sC) sC.destroy();
-  const colors=['#085041','#0F6E56','#1D9E75','#5DCAA5','#9FE1CB','#C8F0E3','#E8F5EE'];
+  const colors=['#085041','#0F6E56','#1D9E75','#5DCAA5','#9FE1CB','#C8F0E3','#E1F5EE'];
   sC=new Chart(document.getElementById('schart'),{type:'line',
     data:{labels:vars.map(v=>`h ${v>0?'+':''}${v}%`),datasets:vars.map((vK,i)=>{
       const Kv=p.K*(1+vK/100);
@@ -463,8 +498,163 @@ function renderSens(){
         borderColor:colors[i],backgroundColor:'transparent',tension:0.3,pointRadius:3,borderDash:vK===0?[]:[4,3]};
     })},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#9196B5',font:{size:10}},grid:{color:'#2E3250'}},
-              y:{ticks:{color:'#9196B5',font:{size:10},callback:v=>fmtM(v)},grid:{color:'#2E3250'}}}}
+      scales:{x:{ticks:{color:'#9196B5',font:{size:10}},grid:{color:'#2E3250'}},y:{ticks:{color:'#9196B5',callback:v=>fmtM(v)},grid:{color:'#2E3250'}}}}
+  });
+}
+
+// ── ROTACIÓN ──────────────────────────────────────────────────────────────────
+function renderRotacion(){
+  const avgRot=products.reduce((a,x)=>a+x.rotacion,0)/products.length;
+  const avgDSI=products.reduce((a,x)=>a+x.dsi,0)/products.length;
+  const lentas=products.filter(x=>x.rotacion<4).length;
+  document.getElementById('rkpis').innerHTML=`
+    <div class="mc"><div class="mc-label">Rotación promedio</div><div class="mc-val">${fmt(avgRot,1)}x</div><div class="mc-sub">veces/año</div></div>
+    <div class="mc"><div class="mc-label">Días de inventario prom.</div><div class="mc-val">${fmt(avgDSI,0)}d</div><div class="mc-sub">DSI promedio</div></div>
+    <div class="mc"><div class="mc-label">Productos rotación baja</div><div class="mc-val" style="color:var(--amber)">${lentas}</div><div class="mc-sub">&lt; 4x/año</div></div>
+    <div class="mc"><div class="mc-label">Capital inmovilizado</div><div class="mc-val">${fmtM(products.reduce((a,x)=>a+x.val_inv,0))}</div></div>`;
+  document.getElementById('rtbody').innerHTML=products.map(p=>{
+    const color=p.rotacion>=12?'var(--green)':p.rotacion>=4?'var(--amber)':'var(--red)';
+    const label=p.rotacion>=12?'Alta':p.rotacion>=4?'Normal':'Baja';
+    const bclass=p.rotacion>=12?'bok':p.rotacion>=4?'bwarn':'bcrit';
+    return `<tr>
+      <td style="font-weight:700">${p.code}</td>
+      <td style="font-family:sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
+      <td><span class="badge b${p.clase}">${p.clase}</span></td>
+      <td>${fmt(p.D)}</td><td>${fmt(p.inv_p,0)}</td>
+      <td style="color:${color};font-weight:700">${fmt(p.rotacion,1)}x</td>
+      <td>${fmt(p.dsi,0)}d</td>
+      <td><span class="badge ${bclass}">${label}</span></td>
+    </tr>`;
+  }).join('');
+  if(rC) rC.destroy();
+  rC=new Chart(document.getElementById('rchart'),{type:'bar',
+    data:{labels:products.map(x=>x.code),datasets:[
+      {label:'Rotación',data:products.map(x=>+x.rotacion.toFixed(2)),backgroundColor:products.map(x=>x.rotacion>=12?'#1D9E75':x.rotacion>=4?'#EF9F27':'#E24B4A'),borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#9196B5'},grid:{color:'#2E3250'}},y:{ticks:{color:'#9196B5',callback:v=>v+'x'},grid:{color:'#2E3250'}}}}
+  });
+}
+
+// ── SELL-THROUGH ──────────────────────────────────────────────────────────────
+function renderSellThrough(){
+  const avg=products.reduce((a,x)=>a+x.sell_through,0)/products.length;
+  const ok=products.filter(x=>x.sell_through>=50&&x.sell_through<80).length;
+  const riesgo=products.filter(x=>x.sell_through>=80).length;
+  document.getElementById('stkpis').innerHTML=`
+    <div class="mc"><div class="mc-label">Sell-through promedio</div><div class="mc-val">${fmt(avg,1)}%</div></div>
+    <div class="mc"><div class="mc-label">En zona saludable (50-80%)</div><div class="mc-val" style="color:var(--green)">${ok}</div></div>
+    <div class="mc"><div class="mc-label">Riesgo faltante (&gt;80%)</div><div class="mc-val" style="color:var(--red)">${riesgo}</div></div>`;
+  document.getElementById('sttbody').innerHTML=products.map(p=>{
+    const color=p.sell_through>=80?'var(--red)':p.sell_through>=50?'var(--green)':'var(--amber)';
+    const label=p.sell_through>=80?'Riesgo faltante':p.sell_through>=50?'Saludable':'Sobrestock';
+    const bclass=p.sell_through>=80?'bcrit':p.sell_through>=50?'bok':'bwarn';
+    const pct=Math.min(100,p.sell_through);
+    const barColor=p.sell_through>=80?'#E24B4A':p.sell_through>=50?'#1D9E75':'#EF9F27';
+    return `<tr>
+      <td style="font-weight:700">${p.code}</td>
+      <td style="font-family:sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
+      <td><span class="badge b${p.clase}">${p.clase}</span></td>
+      <td style="color:${color};font-weight:700">${fmt(p.sell_through,1)}%</td>
+      <td><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${barColor}"></div></div></td>
+      <td>${fmt(p.D/12,0)}</td>
+      <td>${fmt(p.inv_p,0)}</td>
+      <td><span class="badge ${bclass}">${label}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── BACKORDERS ────────────────────────────────────────────────────────────────
+function renderBackorders(){
+  const totalBO=products.reduce((a,x)=>a+x.backorder_est,0);
+  const enRiesgo=products.filter(x=>x.pct_riesgo>33).length;
+  const valBO=products.reduce((a,x)=>a+x.backorder_est*x.pv,0);
+  document.getElementById('bokpis').innerHTML=`
+    <div class="mc"><div class="mc-label">Backorder total estimado</div><div class="mc-val" style="color:var(--red)">${fmt(totalBO,0)}u</div></div>
+    <div class="mc"><div class="mc-label">Valor ventas perdidas est.</div><div class="mc-val" style="color:var(--red)">${fmtM(valBO)}</div></div>
+    <div class="mc"><div class="mc-label">Productos en riesgo alto</div><div class="mc-val" style="color:var(--amber)">${enRiesgo}</div><div class="mc-sub">&gt;33% meses en riesgo</div></div>`;
+  document.getElementById('botbody').innerHTML=products.map(p=>{
+    const riesgoNivel=p.pct_riesgo>50?'bcrit':p.pct_riesgo>25?'bwarn':'bok';
+    const riesgoLabel=p.pct_riesgo>50?'Alto':p.pct_riesgo>25?'Moderado':'Bajo';
+    return `<tr>
+      <td style="font-weight:700">${p.code}</td>
+      <td style="font-family:sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
+      <td><span class="badge b${p.clase}">${p.clase}</span></td>
+      <td style="color:${p.meses_riesgo>6?'var(--red)':p.meses_riesgo>3?'var(--amber)':'var(--green)'}">${p.meses_riesgo} / 12</td>
+      <td>${fmt(p.pct_riesgo,0)}%</td>
+      <td style="color:var(--red)">${fmt(p.backorder_est,0)}</td>
+      <td style="color:var(--red)">${fmtM(p.backorder_est*p.pv)}</td>
+      <td><span class="badge ${riesgoNivel}">${riesgoLabel}</span></td>
+    </tr>`;
+  }).join('');
+  if(boC) boC.destroy();
+  boC=new Chart(document.getElementById('bochart'),{type:'bar',
+    data:{labels:products.map(x=>x.code),datasets:[
+      {label:'Backorder estimado',data:products.map(x=>Math.round(x.backorder_est)),
+       backgroundColor:products.map(x=>x.pct_riesgo>50?'#E24B4A':x.pct_riesgo>25?'#EF9F27':'#1D9E75'),borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#9196B5'},grid:{color:'#2E3250'}},y:{ticks:{color:'#9196B5',callback:v=>fmt(v,0)+'u'},grid:{color:'#2E3250'}}}}
+  });
+}
+
+// ── FORECASTING ────────────────────────────────────────────────────────────────
+function populateFcSel(){
+  const sel=document.getElementById('fcsel');
+  const cur=sel.value;
+  sel.innerHTML=products.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+  if(cur) sel.value=cur;
+  const avgMAPE=products.reduce((a,x)=>a+(x.forecast?.mape||0),0)/products.length;
+  const avgAlpha=products.reduce((a,x)=>a+(x.forecast?.alpha||0),0)/products.length;
+  const bestProd=products.reduce((a,x)=>(x.forecast?.mape||999)<(a.forecast?.mape||999)?x:a,products[0]);
+  document.getElementById('fckpis').innerHTML=`
+    <div class="mc"><div class="mc-label">MAPE promedio portafolio</div><div class="mc-val" style="color:${avgMAPE<10?'var(--green)':avgMAPE<20?'var(--amber)':'var(--red)'}">${fmt(avgMAPE,1)}%</div><div class="mc-sub">${avgMAPE<10?'Excelente':avgMAPE<20?'Bueno':'Revisar datos'}</div></div>
+    <div class="mc"><div class="mc-label">Alpha promedio (suavizado)</div><div class="mc-val">${fmt(avgAlpha,2)}</div><div class="mc-sub">0=más suave · 1=más reactivo</div></div>
+    <div class="mc"><div class="mc-label">Mejor predicción</div><div class="mc-val" style="font-size:13px;margin-top:2px">${bestProd?.code||'—'}</div><div class="mc-sub">MAPE ${fmt(bestProd?.forecast?.mape||0,1)}%</div></div>`;
+}
+
+function renderForecast(){
+  const sel=document.getElementById('fcsel');
+  if(!sel.options.length) populateFcSel();
+  const p=products[parseInt(sel.value)||0]; if(!p||!p.forecast) return;
+  const fc=p.forecast;
+  const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const fcMonths=['M+1','M+2','M+3','M+4','M+5','M+6'];
+
+  document.getElementById('fc-months').innerHTML=fc.forecast.map((v,i)=>`
+    <div class="forecast-month">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:2px">${fcMonths[i]}</div>
+      <div style="font-weight:700;color:var(--blue)">${fmt(v,0)}</div>
+      <div style="font-size:9px;color:var(--text3)">u</div>
+    </div>`).join('');
+
+  document.getElementById('fc-meta').innerHTML=`
+    <span style="margin-right:12px">Alpha óptimo: <b>${fc.alpha}</b></span>
+    <span style="margin-right:12px">Tendencia: <b style="color:${fc.trend>0?'var(--green)':fc.trend<0?'var(--red)':'var(--text2)'}">${fc.trend>0?'+':''}${fmt(fc.trend,1)} u/mes</b></span>`;
+
+  document.getElementById('fc-metrics').innerHTML=`
+    <div style="margin-bottom:8px"><div class="mc-label">MAE (error absoluto medio)</div><div style="font-size:16px;font-weight:700;font-family:monospace">${fmt(fc.mae,1)} u</div></div>
+    <div style="margin-bottom:8px"><div class="mc-label">MAPE (error porcentual)</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:${fc.mape<10?'var(--green)':fc.mape<20?'var(--amber)':'var(--red)'}">${fmt(fc.mape,1)}%</div></div>
+    <div style="margin-bottom:8px"><div class="mc-label">Total forecast 6 meses</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:var(--blue)">${fmt(fc.forecast.reduce((a,b)=>a+b,0),0)} u</div></div>
+    <div><div class="mc-label">Promedio forecast mensual</div><div style="font-size:16px;font-weight:700;font-family:monospace">${fmt(fc.forecast.reduce((a,b)=>a+b,0)/6,0)} u</div></div>`;
+
+  if(fcC) fcC.destroy();
+  const histLabels=months.slice(0,p.months.length);
+  const fcLabels=fcMonths;
+  fcC=new Chart(document.getElementById('fcchart'),{type:'line',
+    data:{
+      labels:[...histLabels,...fcLabels],
+      datasets:[
+        {label:'Demanda real',data:[...p.months,...Array(6).fill(null)],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.1)',fill:true,tension:0.3,pointRadius:4,borderWidth:2},
+        {label:'Modelo ajustado',data:[...fc.fitted,...Array(6).fill(null)],borderColor:'#EF9F27',backgroundColor:'transparent',tension:0.3,pointRadius:3,borderDash:[5,3],borderWidth:1.5},
+        {label:'Forecast',data:[...Array(p.months.length).fill(null),p.months[p.months.length-1],...fc.forecast],borderColor:'#4A90D9',backgroundColor:'rgba(74,144,217,0.1)',fill:false,tension:0.3,pointRadius:4,borderDash:[6,3],borderWidth:2},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#9196B5',font:{size:10}},grid:{color:'#2E3250'}},
+        y:{ticks:{color:'#9196B5',callback:v=>fmt(v,0)+'u'},grid:{color:'#2E3250'}}
+      }}
   });
 }
 </script>
