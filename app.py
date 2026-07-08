@@ -30,6 +30,33 @@ def ns_to_z(ns):
     if ns >= 0.95: return 1.645
     return 1.282
 
+def resolve_params(raw):
+    """Normaliza los parámetros globales. Acepta niveles de servicio
+    (nsA/nsB/nsC, entre 0 y 1 — también admite 95 como 95%) o directamente
+    los valores z (za/zb/zc). kpct en % y cloc en $/m²/mes."""
+    raw = raw or {}
+    def num(v, d):
+        v = clean_num(v)
+        return v if v is not None else d
+    def lvl(v, d):
+        v = num(v, d)
+        if v > 1: v = v / 100.0   # tolera 95 en vez de 0.95
+        return v
+    if any(k in raw for k in ('nsA', 'nsB', 'nsC')):
+        za = ns_to_z(lvl(raw.get('nsA'), 0.99))
+        zb = ns_to_z(lvl(raw.get('nsB'), 0.97))
+        zc = ns_to_z(lvl(raw.get('nsC'), 0.95))
+    else:
+        za = num(raw.get('za'), 2.326)
+        zb = num(raw.get('zb'), 1.881)
+        zc = num(raw.get('zc'), 1.645)
+    return {
+        'za': za, 'zb': zb, 'zc': zc,
+        'kpct': num(raw.get('kpct'), 4.0),
+        'cloc': num(raw.get('cloc'), 9500),
+        'alt':  num(raw.get('alt'), 2.0),
+    }
+
 def classify_abc(products):
     total_va = sum(p['D'] * p['pv'] for p in products)
     if total_va == 0:
@@ -320,10 +347,7 @@ def odoo_sync():
         if not products:
             return jsonify({'error': 'Los productos encontrados no registran ventas en los últimos 12 meses'}), 400
 
-        params = {
-            'za': ns_to_z(0.99), 'zb': ns_to_z(0.97), 'zc': ns_to_z(0.95),
-            'kpct': 4.0, 'cloc': 9500, 'alt': 2.0,
-        }
+        params = resolve_params(body.get('params'))
         classify_abc(products)
         results = []
         for p in products:
@@ -402,7 +426,7 @@ def recalc():
     try:
         body     = request.get_json()
         products = body.get('products', [])
-        params   = body.get('params', {})
+        params   = resolve_params(body.get('params'))
         if not products: return jsonify({'error': 'Sin productos'}), 400
         classify_abc(products)
         results = []

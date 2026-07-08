@@ -412,6 +412,34 @@ window.__resources = {
               <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:7px;padding:8px 14px"><span style="color:#6B7A8D">Días operativos</span> <b style="margin-left:6px">365</b></div>
             </div>
           </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid #E1E5EB">
+              <div style="font-weight:600;font-size:13px">Parámetros globales del modelo</div>
+              <div style="font-size:11.5px;color:#6B7A8D;margin-top:1px">Valores de negocio que no provienen del ERP ni del Excel. {{ gparamsHint }}</div>
+            </div>
+            <div style="padding:16px;display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D">NIVEL SERVICIO A
+                <input type="number" step="0.01" min="0" max="1" value="{{ gNsA }}" onchange="{{ onGNsA }}" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+                <span style="font-size:10px;font-weight:400;color:#9AA7B4">clase A · entre 0 y 1</span>
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D">NIVEL SERVICIO B
+                <input type="number" step="0.01" min="0" max="1" value="{{ gNsB }}" onchange="{{ onGNsB }}" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+                <span style="font-size:10px;font-weight:400;color:#9AA7B4">clase B · entre 0 y 1</span>
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D">NIVEL SERVICIO C
+                <input type="number" step="0.01" min="0" max="1" value="{{ gNsC }}" onchange="{{ onGNsC }}" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+                <span style="font-size:10px;font-weight:400;color:#9AA7B4">clase C · entre 0 y 1</span>
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D">COSTO DE EMISIÓN
+                <input type="number" step="0.5" min="0" value="{{ gKpct }}" onchange="{{ onGKpct }}" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+                <span style="font-size:10px;font-weight:400;color:#9AA7B4">% de la demanda mensual</span>
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D">COSTO DE DEPÓSITO
+                <input type="number" step="100" min="0" value="{{ gCloc }}" onchange="{{ onGCloc }}" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:5px;text-align:right;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+                <span style="font-size:10px;font-weight:400;color:#9AA7B4">$ por m² por mes</span>
+              </label>
+            </div>
+          </div>
           <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);overflow-x:auto">
             <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px">
               <sc-raw-thead><sc-raw-tr>
@@ -919,6 +947,8 @@ class Component extends DCLogic {
     fileName: null,
     loading: false,
     error: null,
+    raw: null,
+    gparams: (() => { try { return Object.assign({ nsA:0.99, nsB:0.97, nsC:0.95, kpct:4, cloc:9500 }, JSON.parse(localStorage.getItem('eoqParams')) || {}); } catch (e) { return { nsA:0.99, nsB:0.97, nsC:0.95, kpct:4, cloc:9500 }; } })(),
     cfg: (() => { try { return JSON.parse(localStorage.getItem('odooCfg')) || {}; } catch (e) { return {}; } })(),
     cfgBusy: null,
     cfgMsg: null,
@@ -960,6 +990,7 @@ class Component extends DCLogic {
       boPenalty: Math.max(50, Math.round((p.cu || 0) * 0.08)),
       trend: Math.round(trendPct * 10) / 10,
       cv: p.cv > 0 ? p.cv : null,
+      zClass: p.z || null,
       months: (p.months || []).map(Number),
       fcast: ((p.forecast && p.forecast.forecast) || []).map(Number),
       mape: (p.forecast && p.forecast.mape) || 0,
@@ -978,9 +1009,34 @@ class Component extends DCLogic {
       .then(({ ok, j }) => {
         if (!ok || j.error) throw new Error(j.error || 'No se pudo procesar el archivo');
         if (!j.products || !j.products.length) throw new Error('El archivo no contiene productos');
-        this.setState({ products: j.products.map(p => this.mapProduct(p)), fileName: f.name, loading: false, sensIdx: 0 });
+        // Los parámetros globales configurados en la app tienen prioridad
+        return this.postRecalc(j.products, this.state.gparams).then(jr => {
+          this.setState({ raw: jr.products, products: jr.products.map(p => this.mapProduct(p)), fileName: f.name, loading: false, sensIdx: 0 });
+        });
       })
       .catch(err => this.setState({ loading: false, error: err.message }));
+  }
+  gparamsPayload(gp) {
+    return { nsA: gp.nsA, nsB: gp.nsB, nsC: gp.nsC, kpct: gp.kpct, cloc: gp.cloc };
+  }
+  postRecalc(rawProducts, gp) {
+    return fetch('/api/recalc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ products: rawProducts, params: this.gparamsPayload(gp) })
+    }).then(r => r.json().then(j => { if (j.error) throw new Error(j.error); return j; }));
+  }
+  updGParam(f, e) {
+    const v = e.target.value;
+    const gp = Object.assign({}, this.state.gparams, { [f]: v === '' ? '' : parseFloat(v) });
+    try { localStorage.setItem('eoqParams', JSON.stringify(gp)); } catch (e2) {}
+    this.setState({ gparams: gp });
+    if (this.state.raw) {
+      this.setState({ loading: true, error: null });
+      this.postRecalc(this.state.raw, gp)
+        .then(jr => this.setState({ raw: jr.products, products: jr.products.map(p => this.mapProduct(p)), loading: false }))
+        .catch(err => this.setState({ loading: false, error: err.message }));
+    }
   }
   updCfg(f, e) {
     const v = e.target.value;
@@ -995,7 +1051,7 @@ class Component extends DCLogic {
     return fetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: c.url || '', db: c.db || '', user: c.user || '', key: c.key || '', categoria: c.cat || '' })
+      body: JSON.stringify({ url: c.url || '', db: c.db || '', user: c.user || '', key: c.key || '', categoria: c.cat || '', params: this.gparamsPayload(this.state.gparams) })
     }).then(r => r.json().then(j => { if (j.error) throw new Error(j.error); return j; }));
   }
   testCfg() {
@@ -1013,6 +1069,7 @@ class Component extends DCLogic {
       .then(j => {
         const host = (this.state.cfg.url || 'Odoo').replace(/^https?:\/\//, '').split('/')[0];
         this.setState({
+          raw: j.products,
           products: j.products.map(p => this.mapProduct(p)),
           fileName: 'Odoo · ' + host,
           sensIdx: 0, error: null,
@@ -1054,7 +1111,8 @@ class Component extends DCLogic {
       const cycle = N > 0 ? 365 / N : 0;
       const dDaily = D / 365;
       const sigma = dDaily * (p.cv > 0 ? p.cv : 0.35);
-      const SSv = z * sigma * Math.sqrt(p.lead);
+      const zEff = p.zClass || z;
+      const SSv = zEff * sigma * Math.sqrt(p.lead);
       const ROP = dDaily * p.lead + SSv;
       const avgInv = EOQ/2 + SSv;
       const TC = (EOQ>0 ? D/EOQ*p.orderCost : 0) + avgInv*H;
@@ -1380,6 +1438,10 @@ class Component extends DCLogic {
       showAbc: S.active==='abc', showDiag: S.active==='diag', showSens: S.active==='sens',
       showRot: S.active==='rot', showSt: S.active==='st', showBo: S.active==='bo', showFc: S.active==='fc',
       showCfg: S.active==='cfg',
+      gNsA: S.gparams.nsA, gNsB: S.gparams.nsB, gNsC: S.gparams.nsC, gKpct: S.gparams.kpct, gCloc: S.gparams.cloc,
+      onGNsA: e => this.updGParam('nsA', e), onGNsB: e => this.updGParam('nsB', e), onGNsC: e => this.updGParam('nsC', e),
+      onGKpct: e => this.updGParam('kpct', e), onGCloc: e => this.updGParam('cloc', e),
+      gparamsHint: S.raw ? 'Los cambios recalculan el análisis al instante.' : 'Se aplican al importar un Excel o sincronizar con el ERP.',
       cfgUrl: S.cfg.url || '', cfgDb: S.cfg.db || '', cfgUser: S.cfg.user || '', cfgKey: S.cfg.key || '', cfgCat: S.cfg.cat || '',
       onCfgUrl: e => this.updCfg('url', e), onCfgDb: e => this.updCfg('db', e),
       onCfgUser: e => this.updCfg('user', e), onCfgKey: e => this.updCfg('key', e), onCfgCat: e => this.updCfg('cat', e),
