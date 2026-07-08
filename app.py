@@ -3,9 +3,15 @@ from flask_cors import CORS
 import openpyxl
 import math
 import io
+import os
+import socket
+import xmlrpc.client
+from datetime import date
 
 app = Flask(__name__)
 CORS(app)
+
+socket.setdefaulttimeout(30)
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -181,6 +187,143 @@ def calc_forecast(months, periods=6, alpha=None):
         'fitted': [round(f, 1) for f in fitted],
         'trend': round(trend, 2),
     }
+
+# ── Integración Odoo (XML-RPC, solo lectura) ─────────────────────────────────
+
+def odoo_creds(body):
+    """Credenciales del request; las variables de entorno actúan de default."""
+    return {
+        'url':  (body.get('url')  or os.environ.get('ODOO_URL', '')).strip().rstrip('/'),
+        'db':   (body.get('db')   or os.environ.get('ODOO_DB', '')).strip(),
+        'user': (body.get('user') or os.environ.get('ODOO_USER', '')).strip(),
+        'key':  (body.get('key')  or os.environ.get('ODOO_API_KEY', '')).strip(),
+    }
+
+def odoo_login(c):
+    if not all([c['url'], c['db'], c['user'], c['key']]):
+        raise ValueError('Faltan datos de conexión: URL, base de datos, usuario y clave API son obligatorios')
+    if not c['url'].startswith('http'):
+        c['url'] = 'https://' + c['url']
+    common = xmlrpc.client.ServerProxy(c['url'] + '/xmlrpc/2/common')
+    uid = common.authenticate(c['db'], c['user'], c['key'], {})
+    if not uid:
+        raise ValueError('Autenticación rechazada: revisá la base de datos, el usuario y la clave API')
+    models = xmlrpc.client.ServerProxy(c['url'] + '/xmlrpc/2/object')
+    return uid, models
+
+def odoo_err(e):
+    if 'CERTIFICATE_VERIFY_FAILED' in str(e):
+        return 'Error de certificado SSL al conectar — la red desde donde corre el servidor intercepta el tráfico seguro'
+    if isinstance(e, xmlrpc.client.Fault):
+        s = e.faultString or ''
+        return 'Odoo respondió con error: ' + (s.strip().splitlines()[-1] if s.strip() else 'desconocido')[:300]
+    if isinstance(e, (socket.timeout, TimeoutError)):
+        return 'Tiempo de espera agotado conectando con Odoo — revisá la URL'
+    if isinstance(e, (ConnectionError, OSError)) and not isinstance(e, ValueError):
+        return 'No se pudo conectar con la URL indicada — revisá que sea accesible (ej. https://empresa.odoo.com)'
+    return str(e)[:300]
+
+def month_start(d, offset):
+    m = d.month - 1 + offset
+    return date(d.year + m // 12, m % 12 + 1, 1)
+
+@app.route('/api/odoo/test', methods=['POST'])
+def odoo_test():
+    try:
+        c = odoo_creds(request.get_json(silent=True) or {})
+        uid, models = odoo_login(c)
+        n = models.execute_kw(c['db'], uid, c['key'], 'product.product', 'search_count',
+                              [[['sale_ok', '=', True]]])
+        return jsonify({'ok': True, 'uid': uid, 'productos_vendibles': n})
+    except Exception as e:
+        return jsonify({'error': odoo_err(e)}), 400
+
+@app.route('/api/odoo/sync', methods=['POST'])
+def odoo_sync():
+    try:
+        body = request.get_json(silent=True) or {}
+        c = odoo_creds(body)
+        cat = (body.get('categoria') or '').strip()
+        uid, models = odoo_login(c)
+
+        def kw(model, method, *args, **kwargs):
+            return models.execute_kw(c['db'], uid, c['key'], model, method, list(args), kwargs)
+
+        dom = [['sale_ok', '=', True]]
+        if cat:
+            dom.append(['categ_id', 'ilike', cat])
+        prods = kw('product.product', 'search_read', dom,
+                   fields=['default_code', 'name', 'volume', 'list_price',
+                           'standard_price', 'qty_available', 'product_tmpl_id'],
+                   limit=300)
+        if not prods:
+            extra = f' en la categoría "{cat}"' if cat else ''
+            return jsonify({'error': 'No se encontraron productos vendibles' + extra}), 400
+
+        # Lead time del proveedor principal (por plantilla de producto)
+        tmpl_ids = list({p['product_tmpl_id'][0] for p in prods if p.get('product_tmpl_id')})
+        delays = {}
+        if tmpl_ids:
+            for si in kw('product.supplierinfo', 'search_read',
+                         [['product_tmpl_id', 'in', tmpl_ids]],
+                         fields=['product_tmpl_id', 'delay'], order='sequence'):
+                t = si['product_tmpl_id'][0]
+                delays.setdefault(t, si.get('delay') or 0)
+
+        # Ventas por mes: últimos 12 meses cerrados
+        pids = [p['id'] for p in prods]
+        first = month_start(date.today(), -12)
+        sales = {pid: [0.0] * 12 for pid in pids}
+        for i in range(12):
+            start, end = month_start(first, i), month_start(first, i + 1)
+            groups = kw('sale.report', 'read_group',
+                        [['date', '>=', str(start)], ['date', '<', str(end)],
+                         ['product_id', 'in', pids],
+                         ['state', 'not in', ['draft', 'sent', 'cancel']]],
+                        ['product_uom_qty'], ['product_id'], lazy=False)
+            for g in groups:
+                pid = g.get('product_id') and g['product_id'][0]
+                if pid in sales:
+                    sales[pid][i] = float(g.get('product_uom_qty') or 0)
+
+        products = []
+        for p in prods:
+            ms = sales.get(p['id'], [0.0] * 12)
+            D = sum(ms)
+            if D <= 0:
+                continue  # sin ventas en 12 meses: fuera del análisis
+            tmpl = p['product_tmpl_id'][0] if p.get('product_tmpl_id') else None
+            products.append({
+                'code':   p.get('default_code') or f"ID-{p['id']}",
+                'name':   p['name'],
+                'vol':    p.get('volume') or 0.05,
+                'lt':     delays.get(tmpl) or 10,
+                'months': ms,
+                'D':      D,
+                'pv':     p.get('list_price') or 0,
+                'cu':     p.get('standard_price') or 0,
+                'clase':  'A',
+                'stock_actual': p.get('qty_available') or 0,
+            })
+        if not products:
+            return jsonify({'error': 'Los productos encontrados no registran ventas en los últimos 12 meses'}), 400
+
+        params = {
+            'za': ns_to_z(0.99), 'zb': ns_to_z(0.97), 'zc': ns_to_z(0.95),
+            'kpct': 4.0, 'cloc': 9500, 'alt': 2.0,
+        }
+        classify_abc(products)
+        results = []
+        for p in products:
+            r = calc_eoq(p, params)
+            p.update(r)
+            rot = calc_rotation(p)
+            fc  = calc_forecast(p['months'])
+            results.append({**p, **rot, 'forecast': fc})
+        return jsonify({'params': params, 'products': results,
+                        'origen': c['url'], 'total_odoo': len(prods)})
+    except Exception as e:
+        return jsonify({'error': odoo_err(e)}), 400
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 

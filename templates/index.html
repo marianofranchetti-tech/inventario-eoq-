@@ -856,6 +856,53 @@ window.__resources = {
         </div>
       </sc-if>
 
+      <!-- ==== 11. INTEGRACIONES ==== -->
+      <sc-if value="{{ showCfg }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Integraciones">
+          <div style="margin-bottom:16px">
+            <div style="font-size:19px;font-weight:700">Integraciones</div>
+            <div style="color:#6B7A8D;margin-top:2px">Conexiones con sistemas externos para sincronizar los datos del análisis</div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E1E5EB;border-radius:8px;box-shadow:0 1px 2px rgba(26,35,50,0.05);max-width:680px">
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #E1E5EB">
+              <div style="width:36px;height:36px;border-radius:7px;background:#714B67;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">O</div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:13.5px">Conexión API con Odoo</div>
+                <div style="font-size:11px;color:#6B7A8D;margin-top:1px">Sincroniza productos, costos, ventas mensuales, lead times y stock actual desde el ERP · solo lectura</div>
+              </div>
+              <span style="font-size:11px;font-weight:600;border-radius:10px;padding:3px 10px;flex-shrink:0;background:{{ cfgBadgeBg }};color:{{ cfgBadgeFg }}">{{ cfgBadge }}</span>
+            </div>
+            <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px 14px">
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D">URL DEL SERVIDOR
+                <input value="{{ cfgUrl }}" onchange="{{ onCfgUrl }}" placeholder="https://empresa.odoo.com" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:6px;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D">BASE DE DATOS
+                <input value="{{ cfgDb }}" onchange="{{ onCfgDb }}" placeholder="empresa-principal-123456" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:6px;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D">USUARIO (EMAIL)
+                <input value="{{ cfgUser }}" onchange="{{ onCfgUser }}" placeholder="usuario@empresa.com" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:6px;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D">CLAVE API
+                <input type="password" value="{{ cfgKey }}" onchange="{{ onCfgKey }}" placeholder="se genera en Odoo: Ajustes → Usuarios → Claves API" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:6px;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:#6B7A8D;grid-column:1 / -1">FILTRO DE CATEGORÍA (OPCIONAL)
+                <input value="{{ cfgCat }}" onchange="{{ onCfgCat }}" placeholder="dejar vacío para traer todos los productos vendibles con ventas" style="padding:7px 10px;border:1px solid #E1E5EB;border-radius:6px;font-size:12.5px;font-weight:400;color:#1A2332;outline:none" style-focus="border-color:#1565C0;box-shadow:0 0 0 2px rgba(21,101,192,0.15)">
+              </label>
+            </div>
+            <sc-if value="{{ cfgMsgShow }}" hint-placeholder-val="{{ false }}">
+              <div style="margin:0 16px 12px;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;background:{{ cfgMsgBg }};color:{{ cfgMsgColor }}">{{ cfgMsgText }}</div>
+            </sc-if>
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid #E1E5EB;background:#F9FAFC;border-radius:0 0 8px 8px">
+              <div onclick="{{ onCfgTest }}" style="font-size:12px;font-weight:600;color:#1565C0;background:#E3ECF7;border:1px solid #C5D7EE;border-radius:6px;padding:6px 14px;cursor:pointer" style-hover="background:#D3E3F5">{{ cfgTestLabel }}</div>
+              <div onclick="{{ onCfgSync }}" style="font-size:12px;font-weight:600;color:#FFFFFF;background:#1565C0;border:1px solid #1565C0;border-radius:6px;padding:6px 14px;cursor:pointer" style-hover="background:#0D4F9E">{{ cfgSyncLabel }}</div>
+              <div style="flex:1"></div>
+              <div style="font-size:10.5px;color:#6B7A8D">Los datos de conexión se guardan solo en este navegador</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;font-size:11.5px;color:#6B7A8D;max-width:680px">Más conexiones disponibles próximamente (otros ERP y sistemas de gestión).</div>
+        </div>
+      </sc-if>
+
     </div>
   </div>
 </div>
@@ -872,6 +919,11 @@ class Component extends DCLogic {
     fileName: null,
     loading: false,
     error: null,
+    cfg: (() => { try { return JSON.parse(localStorage.getItem('odooCfg')) || {}; } catch (e) { return {}; } })(),
+    cfgBusy: null,
+    cfgMsg: null,
+    cfgMsgKind: 'ok',
+    cfgOk: false,
     products: [
       { sku:'CEM-025', name:'Cemento Portland x25kg',      demand:48000,  orderCost:42000, holdRate:24, lead:7,  unitCost:6900,  stock:2600,  boUnits:120, boPenalty:900,  trend:8,  stBegin:2400,  stRecv:4200,  stSold:4050 },
       { sku:'CEM-050', name:'Cemento Portland x50kg',      demand:36000,  orderCost:42000, holdRate:24, lead:7,  unitCost:12800, stock:1900,  boUnits:80,  boPenalty:1500, trend:6,  stBegin:1700,  stRecv:2900,  stSold:2760 },
@@ -903,7 +955,7 @@ class Component extends DCLogic {
       holdRate: Math.round(holdRate * 10) / 10,
       lead: Math.max(1, Math.round(p.lt || 10)),
       unitCost: Math.round(p.cu || 0),
-      stock: Math.max(0, Math.round(p.inv_p || 0)),
+      stock: Math.max(0, Math.round(p.stock_actual != null ? p.stock_actual : (p.inv_p || 0))),
       boUnits: Math.max(0, Math.round((p.backorder_est || 0) / 12)),
       boPenalty: Math.max(50, Math.round((p.cu || 0) * 0.08)),
       trend: Math.round(trendPct * 10) / 10,
@@ -929,6 +981,46 @@ class Component extends DCLogic {
         this.setState({ products: j.products.map(p => this.mapProduct(p)), fileName: f.name, loading: false, sensIdx: 0 });
       })
       .catch(err => this.setState({ loading: false, error: err.message }));
+  }
+  updCfg(f, e) {
+    const v = e.target.value;
+    this.setState(s => {
+      const cfg = Object.assign({}, s.cfg, { [f]: v });
+      try { localStorage.setItem('odooCfg', JSON.stringify(cfg)); } catch (e2) {}
+      return { cfg, cfgOk: false, cfgMsg: null };
+    });
+  }
+  cfgPost(path) {
+    const c = this.state.cfg;
+    return fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: c.url || '', db: c.db || '', user: c.user || '', key: c.key || '', categoria: c.cat || '' })
+    }).then(r => r.json().then(j => { if (j.error) throw new Error(j.error); return j; }));
+  }
+  testCfg() {
+    if (this.state.cfgBusy) return;
+    this.setState({ cfgBusy: 'test', cfgMsg: null });
+    this.cfgPost('/api/odoo/test')
+      .then(j => this.setState({ cfgBusy: null, cfgOk: true, cfgMsgKind: 'ok',
+        cfgMsg: 'Conexión exitosa — ' + j.productos_vendibles + ' productos vendibles en el ERP' }))
+      .catch(e => this.setState({ cfgBusy: null, cfgOk: false, cfgMsgKind: 'err', cfgMsg: e.message }));
+  }
+  syncCfg() {
+    if (this.state.cfgBusy) return;
+    this.setState({ cfgBusy: 'sync', cfgMsg: null });
+    this.cfgPost('/api/odoo/sync')
+      .then(j => {
+        const host = (this.state.cfg.url || 'Odoo').replace(/^https?:\/\//, '').split('/')[0];
+        this.setState({
+          products: j.products.map(p => this.mapProduct(p)),
+          fileName: 'Odoo · ' + host,
+          sensIdx: 0, error: null,
+          cfgBusy: null, cfgOk: true, cfgMsgKind: 'ok',
+          cfgMsg: 'Sincronizados ' + j.products.length + ' productos con ventas (de ' + j.total_odoo + ' vendibles)'
+        });
+      })
+      .catch(e => this.setState({ cfgBusy: null, cfgOk: false, cfgMsgKind: 'err', cfgMsg: e.message }));
   }
   fmt(n, dec) { return Number(n).toLocaleString('es-AR', { minimumFractionDigits: dec||0, maximumFractionDigits: dec||0 }); }
   money(n) { return '$ ' + this.fmt(n); }
@@ -997,12 +1089,14 @@ class Component extends DCLogic {
       rot:   this.icon([['path',{d:'M13 8a5 5 0 1 1-1.5-3.5M13 2v3h-3'}]]),
       st:    this.icon([['path',{d:'M13 3 3 13'}],['circle',{cx:4.5,cy:4.5,r:2}],['circle',{cx:11.5,cy:11.5,r:2}]]),
       bo:    this.icon([['path',{d:'M2 5l6-3 6 3v6l-6 3-6-3z'}],['path',{d:'M2 5l6 3 6-3M8 8v6'}]]),
-      fc:    this.icon([['path',{d:'M2 12l3.5-4 3 2.5L13 4'}],['path',{d:'M13 4v3M13 4h-3'}]])
+      fc:    this.icon([['path',{d:'M2 12l3.5-4 3 2.5L13 4'}],['path',{d:'M13 4v3M13 4h-3'}]]),
+      cfg:   this.icon([['path',{d:'M5.5 6V2.5M10.5 6V2.5'}],['path',{d:'M4 6h8v2.5a4 4 0 0 1-8 0z'}],['path',{d:'M8 12.5V14'}]])
     };
     const navDefs = [
       ['dash','Dashboard'], ['params','Parámetros del modelo'], ['eoq','Resultados EOQ'],
       ['abc','Clasificación ABC'], ['diag','Diagnóstico y alertas'], ['sens','Sensibilidad'],
-      ['rot','Rotación de inventario'], ['st','Sell-through'], ['bo','Backorders'], ['fc','Forecasting IA']
+      ['rot','Rotación de inventario'], ['st','Sell-through'], ['bo','Backorders'], ['fc','Forecasting IA'],
+      ['cfg','Integraciones']
     ];
     const navItems = navDefs.map(([id, label]) => ({
       label, icon: ic[id],
@@ -1011,7 +1105,7 @@ class Component extends DCLogic {
       fw: S.active === id ? 600 : 500,
       onClick: () => this.setState({ active: id })
     }));
-    const titles = { dash:'Dashboard', params:'Parámetros', eoq:'Resultados EOQ', abc:'Clasificación ABC', diag:'Diagnóstico', sens:'Sensibilidad', rot:'Rotación', st:'Sell-through', bo:'Backorders', fc:'Forecasting IA' };
+    const titles = { dash:'Dashboard', params:'Parámetros', eoq:'Resultados EOQ', abc:'Clasificación ABC', diag:'Diagnóstico', sens:'Sensibilidad', rot:'Rotación', st:'Sell-through', bo:'Backorders', fc:'Forecasting IA', cfg:'Integraciones' };
 
     // ---- alerts (shared) ----
     const alerts = [];
@@ -1285,6 +1379,19 @@ class Component extends DCLogic {
       showDash: S.active==='dash', showParams: S.active==='params', showEoq: S.active==='eoq',
       showAbc: S.active==='abc', showDiag: S.active==='diag', showSens: S.active==='sens',
       showRot: S.active==='rot', showSt: S.active==='st', showBo: S.active==='bo', showFc: S.active==='fc',
+      showCfg: S.active==='cfg',
+      cfgUrl: S.cfg.url || '', cfgDb: S.cfg.db || '', cfgUser: S.cfg.user || '', cfgKey: S.cfg.key || '', cfgCat: S.cfg.cat || '',
+      onCfgUrl: e => this.updCfg('url', e), onCfgDb: e => this.updCfg('db', e),
+      onCfgUser: e => this.updCfg('user', e), onCfgKey: e => this.updCfg('key', e), onCfgCat: e => this.updCfg('cat', e),
+      onCfgTest: () => this.testCfg(), onCfgSync: () => this.syncCfg(),
+      cfgTestLabel: S.cfgBusy === 'test' ? 'Probando…' : 'Probar conexión',
+      cfgSyncLabel: S.cfgBusy === 'sync' ? 'Sincronizando…' : 'Sincronizar ahora',
+      cfgBadge: S.cfgOk ? 'Conectada' : (S.cfg.url && S.cfg.db && S.cfg.user && S.cfg.key ? 'Configurada' : 'No configurada'),
+      cfgBadgeBg: S.cfgOk ? '#E5F1E6' : (S.cfg.url && S.cfg.db && S.cfg.user && S.cfg.key ? '#E3ECF7' : '#EEF1F5'),
+      cfgBadgeFg: S.cfgOk ? '#2E7D32' : (S.cfg.url && S.cfg.db && S.cfg.user && S.cfg.key ? '#1565C0' : '#6B7A8D'),
+      cfgMsgShow: !!S.cfgMsg, cfgMsgText: S.cfgMsg || '',
+      cfgMsgColor: S.cfgMsgKind === 'err' ? '#C62828' : '#2E7D32',
+      cfgMsgBg: S.cfgMsgKind === 'err' ? '#F9E3E3' : '#E5F1E6',
       scenarioLabel: (scen>0?'+':'')+scen+'%',
       dashKpis, valueBars, dashAlerts, suggested, abcChips,
       goDiag: e => { e.preventDefault(); this.setState({active:'diag'}); },
