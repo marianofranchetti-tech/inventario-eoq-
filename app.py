@@ -244,19 +244,22 @@ def parse_excel():
 
 @app.route('/api/recalc', methods=['POST'])
 def recalc():
-    body     = request.get_json()
-    products = body.get('products', [])
-    params   = body.get('params', {})
-    if not products: return jsonify({'error': 'Sin productos'}), 400
-    classify_abc(products)
-    results = []
-    for p in products:
-        r = calc_eoq(p, params)
-        p.update(r)
-        rot = calc_rotation(p)
-        fc  = calc_forecast(p['months'])
-        results.append({**p, **rot, 'forecast': fc})
-    return jsonify({'products': results})
+    try:
+        body     = request.get_json()
+        products = body.get('products', [])
+        params   = body.get('params', {})
+        if not products: return jsonify({'error': 'Sin productos'}), 400
+        classify_abc(products)
+        results = []
+        for p in products:
+            r = calc_eoq(p, params)
+            p.update(r)
+            rot = calc_rotation(p)
+            fc  = calc_forecast(p['months'])
+            results.append({**p, **rot, 'forecast': fc})
+        return jsonify({'products': results})
+    except Exception as e:
+        return jsonify({'error': f'Error: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
