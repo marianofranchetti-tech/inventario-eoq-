@@ -316,6 +316,9 @@ window.__resources = {
         <span style="width:7px;height:7px;border-radius:50%;background:{{ statusDot }};display:inline-block;flex-shrink:0"></span>
         {{ dataStatus }}
       </div>
+      <a href="/static/plantilla_inventario.xlsx" download="plantilla_inventario.xlsx" title="Plantilla Excel con los campos requeridos para el análisis" style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#1565C0;background:#E3ECF7;border:1px solid #C5D7EE;border-radius:6px;padding:6px 14px;cursor:pointer;text-decoration:none" style-hover="background:#D3E3F5">
+        {{ downloadIcon }}Descargar plantilla
+      </a>
       <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#FFFFFF;background:#1565C0;border:1px solid #1565C0;border-radius:6px;padding:6px 14px;cursor:pointer" style-hover="background:#0D4F9E">
         {{ uploadIcon }}{{ uploadLabel }}
         <input type="file" accept=".xlsx,.xls" onchange="{{ onFile }}" style="display:none">
@@ -1274,6 +1277,7 @@ class Component extends DCLogic {
       statusDot: S.loading ? C.pri : S.error ? C.err : S.fileName ? C.ok : C.warn,
       uploadLabel: S.loading ? 'Procesando…' : 'Importar Excel',
       uploadIcon: this.icon([['path',{d:'M8 10V2.5M4.8 5.2 8 2l3.2 3.2'}],['path',{d:'M2.5 10.5v2A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5v-2'}]]),
+      downloadIcon: this.icon([['path',{d:'M8 2.5V10M4.8 6.8 8 10l3.2-3.2'}],['path',{d:'M2.5 10.5v2A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5v-2'}]]),
       onFile: e => this.onFile(e),
       navItems, sectionTitle: titles[S.active],
       bellIcon: this.icon([['path',{d:'M8 2a4 4 0 0 1 4 4c0 3 1 4 1.5 4.5H2.5C3 10 4 9 4 6a4 4 0 0 1 4-4z'}],['path',{d:'M6.5 13a1.5 1.5 0 0 0 3 0'}]]),
