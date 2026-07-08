@@ -7,6 +7,7 @@ import os
 import socket
 import xmlrpc.client
 from datetime import date
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 CORS(app)
@@ -190,10 +191,21 @@ def calc_forecast(months, periods=6, alpha=None):
 
 # ── Integración Odoo (XML-RPC, solo lectura) ─────────────────────────────────
 
+def odoo_base_url(u):
+    """Deja solo esquema y dominio: acepta URLs pegadas del navegador con rutas
+    como /odoo, /web o /odoo/action-123."""
+    u = (u or '').strip()
+    if not u:
+        return ''
+    if not u.startswith('http'):
+        u = 'https://' + u
+    p = urlparse(u)
+    return (p.scheme or 'https') + '://' + p.netloc
+
 def odoo_creds(body):
     """Credenciales del request; las variables de entorno actúan de default."""
     return {
-        'url':  (body.get('url')  or os.environ.get('ODOO_URL', '')).strip().rstrip('/'),
+        'url':  odoo_base_url(body.get('url') or os.environ.get('ODOO_URL', '')),
         'db':   (body.get('db')   or os.environ.get('ODOO_DB', '')).strip(),
         'user': (body.get('user') or os.environ.get('ODOO_USER', '')).strip(),
         'key':  (body.get('key')  or os.environ.get('ODOO_API_KEY', '')).strip(),
@@ -202,8 +214,6 @@ def odoo_creds(body):
 def odoo_login(c):
     if not all([c['url'], c['db'], c['user'], c['key']]):
         raise ValueError('Faltan datos de conexión: URL, base de datos, usuario y clave API son obligatorios')
-    if not c['url'].startswith('http'):
-        c['url'] = 'https://' + c['url']
     common = xmlrpc.client.ServerProxy(c['url'] + '/xmlrpc/2/common')
     uid = common.authenticate(c['db'], c['user'], c['key'], {})
     if not uid:
@@ -214,6 +224,8 @@ def odoo_login(c):
 def odoo_err(e):
     if 'CERTIFICATE_VERIFY_FAILED' in str(e):
         return 'Error de certificado SSL al conectar — la red desde donde corre el servidor intercepta el tráfico seguro'
+    if isinstance(e, xmlrpc.client.ProtocolError):
+        return f'El servidor respondió {e.errcode} en {e.url} — verificá que la URL sea la base del Odoo (ej. https://empresa.odoo.com)'
     if isinstance(e, xmlrpc.client.Fault):
         s = e.faultString or ''
         return 'Odoo respondió con error: ' + (s.strip().splitlines()[-1] if s.strip() else 'desconocido')[:300]
