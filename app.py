@@ -266,6 +266,160 @@ def month_start(d, offset):
     m = d.month - 1 + offset
     return date(d.year + m // 12, m % 12 + 1, 1)
 
+# ── Universo de SKU y explosión de BOM ───────────────────────────────────────
+#
+# El análisis de EOQ corre únicamente sobre artículos SIMPLES (sin mrp.bom
+# activa propia). Los compuestos —con BOM tipo Kit (phantom) o Fabricación
+# (normal), tratados igual— no se piden a un proveedor: se ensamblan. No
+# aparecen como fila en la tabla; su demanda se redistribuye entre sus
+# componentes simples, en cualquier nivel de la estructura.
+#
+# Supuesto de diseño: el consumo derivado se calcula explotando las VENTAS
+# del compuesto contra su BOM vigente, no leyendo el consumo físico histórico
+# (stock.move / mrp.production). Para EOQ importa la demanda proyectada de
+# cada componente, no el momento exacto del consumo físico pasado (que en
+# Fabricación puede anteceder a la venta); mezclar fuentes según el tipo de
+# BOM introduciría desfasajes de timing difíciles de conciliar.
+
+def hacer_conversor_uom(uoms):
+    """Conversor entre UoM con la fórmula de uom.uom._compute_quantity:
+    qty / factor_origen * factor_destino. Si falta información o las
+    categorías difieren, devuelve la cantidad sin convertir."""
+    def convertir(qty, de_id, a_id):
+        if not de_id or not a_id or de_id == a_id:
+            return qty
+        de, a = uoms.get(de_id), uoms.get(a_id)
+        if not de or not a or de['categ'] != a['categ']:
+            return qty
+        return qty / de['factor'] * a['factor']
+    return convertir
+
+def explotar_compuestos(simples, compuestos, boms, lineas, uoms, ptav, ventas):
+    """Explosión recursiva de BOM sobre las ventas mensuales de los compuestos.
+
+    Devuelve (consumo, forzados, diag, avisos):
+      consumo:  {product_id: [12 meses]} = ventas directas del simple +
+                consumo derivado de cada compuesto vendido que lo usa
+      forzados: ids clasificados como compuestos (por template) pero sin BOM
+                aplicable a la variante: entran como fila propia igual
+      diag:     desglose compuesto → componente → cantidad derivada anual
+      avisos:   anomalías no fatales (BOM circular, componentes omitidos, …)
+    """
+    simples_por_id = {p['id']: p for p in simples}
+    comp_por_id = {p['id']: p for p in compuestos}
+    convertir = hacer_conversor_uom(uoms)
+
+    boms_por_tmpl = {}
+    for b in sorted(boms, key=lambda b: (b.get('sequence') or 0, b['id'])):
+        if b.get('product_tmpl_id'):
+            boms_por_tmpl.setdefault(b['product_tmpl_id'][0], []).append(b)
+    lineas_por_bom = {}
+    for ln in lineas:
+        if ln.get('bom_id'):
+            lineas_por_bom.setdefault(ln['bom_id'][0], []).append(ln)
+
+    avisos, omitidos, cache = [], set(), {}
+
+    def uom_stock(prod):
+        return prod['uom_id'][0] if prod.get('uom_id') else None
+
+    def bom_de(prod):
+        """BOM aplicable a la variante (emula mrp.bom._bom_find, que no es
+        invocable por RPC): primero la BOM específica de la variante, después
+        la genérica del template, en orden de sequence."""
+        if not prod.get('product_tmpl_id'):
+            return None
+        cands = boms_por_tmpl.get(prod['product_tmpl_id'][0], [])
+        for b in cands:
+            if b.get('product_id') and b['product_id'][0] == prod['id']:
+                return b
+        for b in cands:
+            if not b.get('product_id'):
+                return b
+        return None
+
+    def explotar_unidad(prod, visitados):
+        """{id_simple: cantidad por 1 unidad (en UoM de stock) del compuesto}.
+        None si la variante no tiene BOM aplicable (el llamador la trata como
+        simple). Lanza ValueError ante una BOM circular; visitados se copia
+        por rama para no bloquear ramas hermanas legítimas."""
+        if prod['id'] in visitados:
+            raise ValueError(f"BOM circular detectada en el producto {prod.get('default_code') or prod['id']}")
+        if prod['id'] in cache:
+            return cache[prod['id']]
+        bom = bom_de(prod)
+        if bom is None:
+            return None
+        cant_bom = convertir(bom.get('product_qty') or 1.0,
+                             bom['product_uom_id'][0] if bom.get('product_uom_id') else None,
+                             uom_stock(prod)) or 1.0
+        mis_ptav = ptav.get(prod['id'], set())
+        res = {}
+        for ln in lineas_por_bom.get(bom['id'], []):
+            if not ln.get('product_id'):
+                continue
+            ln_ptav = set(ln.get('bom_product_template_attribute_value_ids') or [])
+            if ln_ptav and not ln_ptav <= mis_ptav:
+                continue  # línea condicionada a otra variante del compuesto
+            comp_id = ln['product_id'][0]
+            comp = comp_por_id.get(comp_id) or simples_por_id.get(comp_id)
+            if comp is None:
+                omitidos.add(ln['product_id'][1])  # no almacenable o archivado
+                continue
+            cant = convertir(ln.get('product_qty') or 0.0,
+                             ln['product_uom_id'][0] if ln.get('product_uom_id') else None,
+                             uom_stock(comp)) / cant_bom
+            if comp_id in comp_por_id:
+                sub = explotar_unidad(comp, visitados | {prod['id']})
+                if sub is None:
+                    res[comp_id] = res.get(comp_id, 0.0) + cant  # sin BOM: simple
+                else:
+                    for k, v in sub.items():
+                        res[k] = res.get(k, 0.0) + v * cant
+            else:
+                res[comp_id] = res.get(comp_id, 0.0) + cant
+        cache[prod['id']] = res
+        return res
+
+    consumo = {pid: list(ventas.get(pid) or [0.0] * 12) for pid in simples_por_id}
+    forzados, diag = set(), []
+
+    for cp in compuestos:
+        ms = ventas.get(cp['id'])
+        if not ms or sum(ms) <= 0:
+            continue  # sin ventas en el período: no genera consumo derivado
+        try:
+            por_unidad = explotar_unidad(cp, set())
+        except ValueError as e:
+            avisos.append(f'{e} — se omitió su explosión (revisar la BOM en Odoo)')
+            continue
+        if por_unidad is None:
+            fila = consumo.setdefault(cp['id'], [0.0] * 12)
+            for i in range(12):
+                fila[i] += ms[i]
+            forzados.add(cp['id'])
+            avisos.append(f"{cp.get('default_code') or cp['id']} tiene BOM en el template pero ninguna aplicable a la variante vendida: se trató como simple")
+            continue
+        det = []
+        for comp_id, q in por_unidad.items():
+            fila = consumo.setdefault(comp_id, [0.0] * 12)
+            for i in range(12):
+                fila[i] += ms[i] * q
+            if comp_id in comp_por_id:
+                forzados.add(comp_id)
+            info = simples_por_id.get(comp_id) or comp_por_id.get(comp_id)
+            det.append({'code': info.get('default_code') or f'ID-{comp_id}',
+                        'name': info['name'], 'qty': round(sum(ms) * q, 2)})
+        diag.append({'code': cp.get('default_code') or f"ID-{cp['id']}",
+                     'name': cp['name'], 'D': round(sum(ms), 2),
+                     'componentes': sorted(det, key=lambda d: -d['qty'])})
+
+    if omitidos:
+        lst = sorted(omitidos)
+        avisos.append('Componentes de BOM fuera del análisis (no almacenables o archivados): '
+                      + ', '.join(lst[:10]) + ('…' if len(lst) > 10 else ''))
+    return consumo, forzados, diag, avisos
+
 @app.route('/api/odoo/test', methods=['POST'])
 def odoo_test():
     try:
@@ -288,31 +442,80 @@ def odoo_sync():
         def kw(model, method, *args, **kwargs):
             return models.execute_kw(c['db'], uid, c['key'], model, method, list(args), kwargs)
 
-        dom = [['sale_ok', '=', True]]
+        avisos = []
+
+        # 1) BOMs activas: definen qué producto es compuesto (Kit y Fabricación
+        #    cuentan por igual; ver nota de diseño arriba)
+        try:
+            boms = kw('mrp.bom', 'search_read', [['active', '=', True]],
+                      fields=['product_tmpl_id', 'product_id', 'product_qty',
+                              'product_uom_id', 'type', 'sequence'])
+        except Exception:
+            boms = []
+            avisos.append('No se pudo leer mrp.bom (¿módulo Fabricación no instalado?); todos los productos se tratan como simples')
+        tmpl_compuestos = sorted({b['product_tmpl_id'][0] for b in boms if b.get('product_tmpl_id')})
+
+        # 2) Campo de "almacenable" según la versión de Odoo (is_storable desde v18)
+        almacenable = ([['is_storable', '=', True]]
+                       if kw('product.product', 'fields_get', ['is_storable'])
+                       else [['type', '=', 'product']])
+
+        CAMPOS = ['default_code', 'name', 'volume', 'list_price', 'standard_price',
+                  'qty_available', 'product_tmpl_id', 'uom_id']
+
+        # 3) Universo de artículos simples: todo almacenable sin BOM propia,
+        #    tenga o no ventas directas. El filtro de categoría restringe solo
+        #    las filas del análisis; los compuestos se traen sin filtro porque
+        #    su demanda explotada puede caer en componentes de esta categoría.
+        dom = list(almacenable)
+        if tmpl_compuestos:
+            dom.append(['product_tmpl_id', 'not in', tmpl_compuestos])
         if cat:
             dom.append(['categ_id', 'ilike', cat])
-        prods = kw('product.product', 'search_read', dom,
-                   fields=['default_code', 'name', 'volume', 'list_price',
-                           'standard_price', 'qty_available', 'product_tmpl_id'],
-                   limit=300)
-        if not prods:
+        simples = kw('product.product', 'search_read', dom, fields=CAMPOS)
+
+        compuestos = kw('product.product', 'search_read',
+                        [['product_tmpl_id', 'in', tmpl_compuestos]],
+                        fields=CAMPOS) if tmpl_compuestos else []
+        if not simples and not compuestos:
             extra = f' en la categoría "{cat}"' if cat else ''
-            return jsonify({'error': 'No se encontraron productos vendibles' + extra}), 400
+            return jsonify({'error': 'No se encontraron productos almacenables' + extra}), 400
 
-        # Lead time del proveedor principal (por plantilla de producto)
-        tmpl_ids = list({p['product_tmpl_id'][0] for p in prods if p.get('product_tmpl_id')})
-        delays = {}
-        if tmpl_ids:
-            for si in kw('product.supplierinfo', 'search_read',
-                         [['product_tmpl_id', 'in', tmpl_ids]],
-                         fields=['product_tmpl_id', 'delay'], order='sequence'):
-                t = si['product_tmpl_id'][0]
-                delays.setdefault(t, si.get('delay') or 0)
+        # 4) Estructura de las BOM: líneas, UoM y atributos de variante
+        lineas, ptav = [], {}
+        if boms:
+            campos_linea = ['bom_id', 'product_id', 'product_qty', 'product_uom_id',
+                            'bom_product_template_attribute_value_ids']
+            try:
+                lineas = kw('mrp.bom.line', 'search_read',
+                            [['bom_id', 'in', [b['id'] for b in boms]]], fields=campos_linea)
+            except Exception:
+                lineas = kw('mrp.bom.line', 'search_read',
+                            [['bom_id', 'in', [b['id'] for b in boms]]], fields=campos_linea[:4])
+            try:
+                ptav = {p['id']: set(p.get('product_template_attribute_value_ids') or [])
+                        for p in kw('product.product', 'read', [p['id'] for p in compuestos],
+                                    fields=['product_template_attribute_value_ids'])}
+            except Exception:
+                pass  # sin datos de variantes: las líneas condicionadas se incluyen igual
 
-        # Ventas por mes: últimos 12 meses cerrados
-        pids = [p['id'] for p in prods]
+        uoms = {}
+        uom_ids = {p['uom_id'][0] for p in simples + compuestos if p.get('uom_id')}
+        uom_ids |= {b['product_uom_id'][0] for b in boms if b.get('product_uom_id')}
+        uom_ids |= {ln['product_uom_id'][0] for ln in lineas if ln.get('product_uom_id')}
+        if uom_ids:
+            try:
+                for u in kw('uom.uom', 'read', list(uom_ids), fields=['factor', 'category_id']):
+                    uoms[u['id']] = {'factor': u.get('factor') or 1.0,
+                                     'categ': u['category_id'][0] if u.get('category_id') else None}
+            except Exception:
+                avisos.append('No se pudieron leer las unidades de medida; se asume la misma UoM en BOM y stock')
+
+        # 5) Ventas por mes (últimos 12 cerrados) de TODOS los productos: los
+        #    compuestos se consultan para explotarlos aunque no sean fila
+        pids = [p['id'] for p in simples] + [p['id'] for p in compuestos]
         first = month_start(date.today(), -12)
-        sales = {pid: [0.0] * 12 for pid in pids}
+        ventas = {pid: [0.0] * 12 for pid in pids}
         for i in range(12):
             start, end = month_start(first, i), month_start(first, i + 1)
             groups = kw('sale.report', 'read_group',
@@ -322,30 +525,48 @@ def odoo_sync():
                         ['product_uom_qty'], ['product_id'], lazy=False)
             for g in groups:
                 pid = g.get('product_id') and g['product_id'][0]
-                if pid in sales:
-                    sales[pid][i] = float(g.get('product_uom_qty') or 0)
+                if pid in ventas:
+                    ventas[pid][i] = float(g.get('product_uom_qty') or 0)
+
+        # 6) Consumo total = ventas directas + demanda derivada por explosión
+        consumo, forzados, diag, avisos_exp = explotar_compuestos(
+            simples, compuestos, boms, lineas, uoms, ptav, ventas)
+        avisos += avisos_exp
+
+        info_por_id = {p['id']: p for p in simples}
+        info_por_id.update({p['id']: p for p in compuestos if p['id'] in forzados})
+        filas = [(pid, ms) for pid, ms in consumo.items()
+                 if sum(ms) > 0 and pid in info_por_id]
+        if not filas:
+            return jsonify({'error': 'Ningún artículo simple registra consumo (directo ni derivado de compuestos) en los últimos 12 meses'}), 400
+
+        # 7) Lead time del proveedor principal, solo para las filas del análisis
+        tmpl_ids = list({info_por_id[pid]['product_tmpl_id'][0] for pid, _ in filas
+                         if info_por_id[pid].get('product_tmpl_id')})
+        delays = {}
+        for j in range(0, len(tmpl_ids), 1000):
+            for si in kw('product.supplierinfo', 'search_read',
+                         [['product_tmpl_id', 'in', tmpl_ids[j:j + 1000]]],
+                         fields=['product_tmpl_id', 'delay'], order='sequence'):
+                t = si['product_tmpl_id'][0]
+                delays.setdefault(t, si.get('delay') or 0)
 
         products = []
-        for p in prods:
-            ms = sales.get(p['id'], [0.0] * 12)
-            D = sum(ms)
-            if D <= 0:
-                continue  # sin ventas en 12 meses: fuera del análisis
+        for pid, ms in filas:
+            p = info_por_id[pid]
             tmpl = p['product_tmpl_id'][0] if p.get('product_tmpl_id') else None
             products.append({
-                'code':   p.get('default_code') or f"ID-{p['id']}",
+                'code':   p.get('default_code') or f"ID-{pid}",
                 'name':   p['name'],
                 'vol':    p.get('volume') or 0.05,
                 'lt':     delays.get(tmpl) or 10,
-                'months': ms,
-                'D':      D,
+                'months': [round(m, 2) for m in ms],
+                'D':      round(sum(ms), 2),
                 'pv':     p.get('list_price') or 0,
                 'cu':     p.get('standard_price') or 0,
                 'clase':  'A',
                 'stock_actual': p.get('qty_available') or 0,
             })
-        if not products:
-            return jsonify({'error': 'Los productos encontrados no registran ventas en los últimos 12 meses'}), 400
 
         params = resolve_params(body.get('params'))
         classify_abc(products)
@@ -356,8 +577,11 @@ def odoo_sync():
             rot = calc_rotation(p)
             fc  = calc_forecast(p['months'])
             results.append({**p, **rot, 'forecast': fc})
-        return jsonify({'params': params, 'products': results,
-                        'origen': c['url'], 'total_odoo': len(prods)})
+        return jsonify({'params': params, 'products': results, 'origen': c['url'],
+                        'total_odoo': len(simples),
+                        'compuestos_explotados': len(diag),
+                        'diagnostico_compuestos': diag,
+                        'avisos': avisos})
     except Exception as e:
         return jsonify({'error': odoo_err(e)}), 400
 

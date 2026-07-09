@@ -1068,13 +1068,18 @@ class Component extends DCLogic {
     this.cfgPost('/api/odoo/sync')
       .then(j => {
         const host = (this.state.cfg.url || 'Odoo').replace(/^https?:\/\//, '').split('/')[0];
+        if (j.avisos && j.avisos.length) console.warn('Avisos de sincronización Odoo:', j.avisos);
+        if (j.diagnostico_compuestos && j.diagnostico_compuestos.length)
+          console.info('Explosión de compuestos (compuesto → componentes, demanda derivada anual):', j.diagnostico_compuestos);
         this.setState({
           raw: j.products,
           products: j.products.map(p => this.mapProduct(p)),
           fileName: 'Odoo · ' + host,
           sensIdx: 0, error: null,
           cfgBusy: null, cfgOk: true, cfgMsgKind: 'ok',
-          cfgMsg: 'Sincronizados ' + j.products.length + ' productos con ventas (de ' + j.total_odoo + ' vendibles)'
+          cfgMsg: 'Sincronizados ' + j.products.length + ' artículos simples con consumo (universo: ' + j.total_odoo + ' simples; '
+                + (j.compuestos_explotados || 0) + ' compuestos explotados a sus componentes)'
+                + (j.avisos && j.avisos.length ? ' — ' + j.avisos.length + ' avisos, ver consola' : '')
         });
       })
       .catch(e => this.setState({ cfgBusy: null, cfgOk: false, cfgMsgKind: 'err', cfgMsg: e.message }));
