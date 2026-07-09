@@ -512,7 +512,11 @@ def odoo_sync():
                 avisos.append('No se pudieron leer las unidades de medida; se asume la misma UoM en BOM y stock')
 
         # 5) Ventas por mes (últimos 12 cerrados) de TODOS los productos: los
-        #    compuestos se consultan para explotarlos aunque no sean fila
+        #    compuestos se consultan para explotarlos aunque no sean fila.
+        #    Ojo: no filtrar por product_id acá — read_group repite el domain
+        #    entero en el __domain de cada grupo, y con miles de ids la
+        #    respuesta XML-RPC crece a decenas de MB y tumba el server; se
+        #    filtra client-side con el diccionario `ventas`.
         pids = [p['id'] for p in simples] + [p['id'] for p in compuestos]
         first = month_start(date.today(), -12)
         ventas = {pid: [0.0] * 12 for pid in pids}
@@ -520,7 +524,6 @@ def odoo_sync():
             start, end = month_start(first, i), month_start(first, i + 1)
             groups = kw('sale.report', 'read_group',
                         [['date', '>=', str(start)], ['date', '<', str(end)],
-                         ['product_id', 'in', pids],
                          ['state', 'not in', ['draft', 'sent', 'cancel']]],
                         ['product_uom_qty'], ['product_id'], lazy=False)
             for g in groups:
